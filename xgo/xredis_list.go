@@ -80,11 +80,11 @@ func (this *XRedis) RPop(key string) ([]byte, error) {
 	return ret.([]byte), nil
 }
 
-func (this *XRedis) BLPop(key string) ([]byte, error) {
+func (this *XRedis) BLPop(key string, timeout int) ([]byte, error) {
 	key = fmt.Sprintf("%v:%v", project, key)
 	conn := this.redispool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("blpop", key)
+	ret, err := conn.Do("blpop", key, timeout)
 	if err != nil {
 		logs.Error(err.Error())
 		return nil, err
@@ -92,11 +92,11 @@ func (this *XRedis) BLPop(key string) ([]byte, error) {
 	return ret.([]byte), nil
 }
 
-func (this *XRedis) BRPop(key string) ([]byte, error) {
+func (this *XRedis) BRPop(key string, timeout int) ([]byte, error) {
 	key = fmt.Sprintf("%v:%v", project, key)
 	conn := this.redispool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("brpop", key)
+	ret, err := conn.Do("brpop", key, timeout)
 	if err != nil {
 		logs.Error(err.Error())
 		return nil, err

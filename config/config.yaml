@@ -1,6 +1,8 @@
 server:
   env: test
   project: xgotest
+  http:
+    port: 3353
   db:
     host: 10.10.234.221
     port: 14578

@@ -95,6 +95,7 @@ func (this *XRedis) subscribe(channels ...string) {
 	}
 }
 
+// ////////////////////////////////////////////////////////////////////////////////
 func (this *XRedis) Subscribe(channel string, callback AbuRedisSubCallback) {
 	channel = fmt.Sprintf("%v:%v", project, channel)
 	this.subscribecallbacks.Store(channel, callback)
@@ -122,12 +123,9 @@ func (this *XRedis) Publish(key string, value interface{}) error {
 	return nil
 }
 
-func (this *XRedis) GetLock(key string, expireseconds int) bool {
+func (this *XRedis) GetLock(key string, expire_second int) bool {
 	key = fmt.Sprintf("%v:%v", project, key)
-	r := this.SetNx(key, "1")
-	if r {
-		this.Expire(key, expireseconds)
-	}
+	r := this.SetNx(key, "1", expire_second)
 	return r
 }
 

@@ -85,7 +85,7 @@ func (this *XRedis) GetSet(key string, value interface{}) ([]byte, error) {
 	return ret.([]byte), nil
 }
 
-func (this *XRedis) SetNx(key string, value interface{}) bool {
+func (this *XRedis) SetNx(key string, value interface{}, expire_second int) bool {
 	key = fmt.Sprintf("%v:%v", project, key)
 	conn := this.redispool.Get()
 	defer conn.Close()
@@ -105,6 +105,9 @@ func (this *XRedis) SetNx(key string, value interface{}) bool {
 		return false
 	}
 	ir := r.(int64)
+	if ir == 1 && expire_second > 0 {
+		this.Expire(key, expire_second)
+	}
 	return ir == 1
 }
 
