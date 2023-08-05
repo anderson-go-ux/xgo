@@ -1,4 +1,4 @@
-module xgo
+module github.com/zhms/xgo
 
 go 1.20
 
