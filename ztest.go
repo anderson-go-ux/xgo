@@ -1,8 +1,6 @@
 package main
 
-import (
-	"xgo/xgo"
-)
+import xgo "xgo/zzx"
 
 func main() {
 	xgo.Init()
