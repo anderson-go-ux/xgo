@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var env string
+var env string = "2"
 var project string
 var module string
 
@@ -40,7 +40,7 @@ func Init() {
 	logs.SetLogger(logs.AdapterConsole, `{"color":true}`)
 	viper.AddConfigPath("./")
 	viper.AddConfigPath("./config")
-	viper.SetConfigName("config")
+	viper.SetConfigName("configx")
 	viper.SetConfigType("yaml")
 	err := viper.ReadInConfig()
 	if err != nil {
