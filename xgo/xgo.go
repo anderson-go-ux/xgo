@@ -10,9 +10,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-var env string = "2"
+var env string
 var project string
-var module string
+
 
 /*
 go get github.com/beego/beego/logs
@@ -40,11 +40,23 @@ func Init() {
 	logs.SetLogger(logs.AdapterConsole, `{"color":true}`)
 	viper.AddConfigPath("./")
 	viper.AddConfigPath("./config")
-	viper.SetConfigName("configx")
+	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	err := viper.ReadInConfig()
 	if err != nil {
 		logs.Error("读取配置文件失败", err)
 		return
+	}
+	env = GetConfigString("server.env", true, "")
+	project = GetConfigString("server.project", true, "")
+}
+
+func Prjoect() string{
+	return project
+}
+
+func Run(){
+	for{
+		time.Sleep(time.Second * 1)
 	}
 }
