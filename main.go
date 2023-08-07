@@ -12,6 +12,11 @@ func main() {
 	xgo.Init()
 	db.Init("server.db")
 	redis.Init("server.redis")
-	http.Init("server.http", redis)
+	http.Init("server.http", nil)
+	http.InitWs("/api/ws")
+	xgo.AdminInit(http, db)
+	http.OnPostNoAuth("/test", func(ctx *xgo.XHttpContent) {
+		ctx.RespOK("123")
+	})
 	xgo.Run()
 }

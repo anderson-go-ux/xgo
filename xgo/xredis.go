@@ -188,3 +188,816 @@ func (this *XRedis) GetCacheFloat(key string, cb func() float64) float64 {
 		return cb()
 	}
 }
+
+func (this *XRedis) Ping() error {
+	conn := this.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("ping")
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) Del(key string) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("del", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) Dump(key string) ([]byte, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("dump", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil, err
+	}
+	return ret.([]byte), nil
+}
+
+func (this *XRedis) Exists(key string) (bool, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("exists", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return false, err
+	}
+	return ret.(int64) == 1, nil
+}
+
+func (this *XRedis) Expire(key string, second_expire int) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("expire", key, second_expire)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) ExpireAt(key string, second_timestamp int64) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("expireat", key, second_timestamp)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) PExpire(key string, millisecond_expire int) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("pexpire", key, millisecond_expire)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) PExpireAt(key string, millisecond_timestamp int) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("pexpireat", key, millisecond_timestamp)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) Keys(key string) ([]string, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("keys", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return []string{}, err
+	}
+	retarr := []string{}
+	arr := ret.([]interface{})
+	for i := 0; i < len(arr); i++ {
+		retarr = append(retarr, string(arr[i].([]byte)))
+	}
+	return retarr, nil
+}
+
+func (this *XRedis) Move(key string, db int) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("move", key, db)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) Persist(key string) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("persist", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) PTtl(key string) (int64, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("pttl", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return 0, err
+	}
+	return ret.(int64), nil
+}
+
+func (this *XRedis) Ttl(key string) (int64, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("ttl", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return 0, err
+	}
+	return ret.(int64), nil
+}
+
+func (this *XRedis) RandomKey() (string, error) {
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("randomkey")
+	if err != nil {
+		logs.Error(err.Error())
+		return "", err
+	}
+	fmt.Println(string(ret.([]byte)))
+	return string(ret.([]byte)), nil
+}
+
+func (this *XRedis) Rename(oldkey string, newkey string) error {
+	oldkey = fmt.Sprintf("%v:%v", project, oldkey)
+	newkey = fmt.Sprintf("%v:%v", project, newkey)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("rename", oldkey, newkey)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) RenameNx(oldkey string, newkey string) (bool, error) {
+	oldkey = fmt.Sprintf("%v:%v", project, oldkey)
+	newkey = fmt.Sprintf("%v:%v", project, newkey)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("renamenx", oldkey, newkey)
+	if err != nil {
+		logs.Error(err.Error())
+		return false, err
+	}
+	return ret.(int64) == 1, nil
+}
+
+func (this *XRedis) Type(key string) (string, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("type", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return "", err
+	}
+	return ret.(string), nil
+}
+
+func (this *XRedis) LPush(key string, value interface{}) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	data := []interface{}{}
+	data = append(data, key)
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	data = append(data, strval)
+	_, err := conn.Do("lpush", data...)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	return nil
+}
+
+func (this *XRedis) RPush(key string, value interface{}) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	data := []interface{}{}
+	data = append(data, key)
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	data = append(data, strval)
+	_, err := conn.Do("rpush", data...)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	return nil
+}
+
+func (this *XRedis) LPop(key string) ([]byte, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("lpop", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil, err
+	}
+	return ret.([]byte), nil
+}
+
+func (this *XRedis) RPop(key string) ([]byte, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("lpop", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil, err
+	}
+	return ret.([]byte), nil
+}
+
+func (this *XRedis) BLPop(key string, timeout int) ([]byte, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("blpop", key, timeout)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil, err
+	}
+	arr := ret.([]interface{})
+	return arr[1].([]byte), nil
+}
+
+func (this *XRedis) BRPop(key string, timeout int) ([]byte, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("brpop", key, timeout)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil, err
+	}
+	return ret.([]byte), nil
+}
+
+func (this *XRedis) LIndex(key string, index int) ([]byte, error) {
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("lindex", key, index)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil, err
+	}
+	return ret.([]byte), nil
+}
+
+func (this *XRedis) LLen(key string) (int64, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("llen", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return 0, err
+	}
+	return ret.(int64), nil
+}
+
+func (this *XRedis) LRange(key string, start int, end int) ([]string, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	retarr := []string{}
+	ret, err := conn.Do("lrange", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return retarr, err
+	}
+	arr := ret.([]interface{})
+
+	for i := 0; i > len(arr); i++ {
+		retarr = append(retarr, string(arr[i].([]byte)))
+	}
+	return retarr, nil
+}
+
+func (this *XRedis) LSet(key string, index int, value interface{}) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	_, err := conn.Do("lset", key, index, strval)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) LRem(key string, index int) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("lrem", key, index)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) HDel(key string, field string) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	_, err := conn.Do("hdel", key, field)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	return nil
+}
+
+func (this *XRedis) HExists(key string, field string) (bool, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("hexists", key, field)
+	if err != nil {
+		logs.Error(err.Error())
+		return false, err
+	}
+	return ret.(int64) == 1, nil
+}
+
+func (this *XRedis) HSet(key string, field string, value interface{}) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	_, err := conn.Do("hset", key, field, strval)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) HGet(key string, field string) interface{} {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("hget", key, field)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	return ret
+}
+
+func (this *XRedis) HGetAll(key string) *map[string]interface{} {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("hgetall", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	arrret := ret.([]interface{})
+	if len(arrret) == 0 {
+		return nil
+	}
+	mapret := map[string]interface{}{}
+	for i := 0; i < len(arrret); i++ {
+		if i%2 == 0 {
+			mapret[string(arrret[i].([]byte))] = string(arrret[i+1].([]byte))
+		}
+	}
+	return &mapret
+}
+
+func (this *XRedis) HIncrByFloat(key string, field string, value float64) (float64, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("hincrbyfloat", key, field, value)
+	if err != nil {
+		logs.Error(err.Error())
+		return 0, err
+	}
+	r, _ := strconv.ParseFloat(string(ret.([]byte)), 32)
+	return r, nil
+}
+
+func (this *XRedis) HKeys(key string) ([]string, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	keys, err := conn.Do("hkeys", key)
+	ikeys := keys.([]interface{})
+	strkeys := []string{}
+	if err != nil {
+		logs.Error(err.Error())
+		return strkeys, err
+	}
+	for i := 0; i < len(ikeys); i++ {
+		strkeys = append(strkeys, string(ikeys[i].([]byte)))
+	}
+	return strkeys, nil
+}
+
+func (this *XRedis) HLen(key string) (int64, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("hlen", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return 0, nil
+	}
+	return ret.(int64), nil
+}
+
+func (this *XRedis) HSetNx(key string, field string, value interface{}) (bool, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	ret, err := conn.Do("hsetnx", key, field, strval)
+	fmt.Println(ret)
+	if err != nil {
+		logs.Error(err.Error())
+		return false, err
+	}
+	return ret.(int64) == 1, nil
+}
+
+func (this *XRedis) HMGet(key string, fields ...interface{}) *map[string]interface{} {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	data := []interface{}{}
+	data = append(data, key)
+	data = append(data, fields...)
+	ret, err := conn.Do("hmget", data...)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	arrret := ret.([]interface{})
+	if len(arrret) == 0 {
+		return nil
+	}
+	mapret := map[string]interface{}{}
+	for i := 0; i < len(fields); i++ {
+		field := fields[i]
+		if arrret[i] != nil {
+			mapret[field.(string)] = string(arrret[i].([]byte))
+		}
+	}
+	return &mapret
+}
+
+func (this *XRedis) SAdd(key string, value interface{}) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	_, err := conn.Do("sadd", key, strval)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil
+	}
+	return nil
+}
+
+func (this *XRedis) SMembers(key string) []interface{} {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("smembers", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return []interface{}{}
+	}
+	if ret == nil {
+		return []interface{}{}
+	}
+	arr := ret.([]interface{})
+	return arr
+}
+
+func (this *XRedis) SRem(key string, value interface{}) []interface{} {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	data := []interface{}{}
+	data = append(data, key)
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	data = append(data, strval)
+	_, err := conn.Do("srem", data...)
+	if err != nil {
+		logs.Error(err.Error())
+		return []interface{}{}
+	}
+	return nil
+}
+
+func (this *XRedis) SIsMember(key string, value interface{}) (bool, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	ret, err := conn.Do("smembers", key, strval)
+	if err != nil {
+		logs.Error(err.Error())
+		return false, err
+	}
+	return ret.(int64) == 1, nil
+}
+
+func (this *XRedis) SCard(key string) (int64, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("scard", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return 0, err
+	}
+	return ret.(int64), nil
+}
+
+func (this *XRedis) Set(key string, value interface{}, expireseconds int) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	if expireseconds > 0 {
+		_, err := conn.Do("setex", key, expireseconds, strval)
+		if err != nil {
+			logs.Error(err.Error())
+			return err
+		}
+		return nil
+	} else {
+		_, err := conn.Do("set", key, strval)
+		if err != nil {
+			logs.Error(err.Error())
+			return err
+		}
+		return nil
+	}
+}
+
+func (this *XRedis) Get(key string) ([]byte, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("get", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil, err
+	}
+	return ret.([]byte), nil
+}
+
+func (this *XRedis) GetRange(key string, start int, end int) ([]byte, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("getrange", key, start, end)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil, err
+	}
+	return ret.([]byte), nil
+}
+
+func (this *XRedis) GetSet(key string, value interface{}) ([]byte, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	ret, err := conn.Do("getset", key, strval)
+	if err != nil {
+		logs.Error(err.Error())
+		return nil, err
+	}
+	fmt.Println(string(ret.([]byte)))
+	return ret.([]byte), nil
+}
+
+func (this *XRedis) SetNx(key string, value interface{}, expire_second int) bool {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	key = fmt.Sprintf("%v:%v", project, key)
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	r, err := conn.Do("setnx", key, strval)
+	if err != nil {
+		logs.Error(err.Error())
+		return false
+	}
+	ir := r.(int64)
+	if ir == 1 && expire_second > 0 {
+		this.Expire(key, expire_second)
+	}
+	return ir == 1
+}
+
+func (this *XRedis) SetRange(key string, offset int, value interface{}) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	_, err := conn.Do("setrange", key, offset, strval)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) StrLen(key string) (int64, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("strlen", key)
+	if err != nil {
+		logs.Error(err.Error())
+		return 0, err
+	}
+	return ret.(int64), nil
+}
+
+func (this *XRedis) IncrByFloat(key string, value float64) (float64, error) {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("incrbyfloat", key, value)
+	if err != nil {
+		logs.Error(err.Error())
+		return 0, err
+	}
+	r, _ := strconv.ParseFloat(string(ret.([]byte)), 32)
+	return r, nil
+}
+
+func (this *XRedis) Append(key string, value interface{}) error {
+	key = fmt.Sprintf("%v:%v", project, key)
+	conn := this.redispool.Get()
+	defer conn.Close()
+	typename := reflect.TypeOf(value).Name()
+	strval := ""
+	switch typename {
+	case "int", "int32", "int64", "float", "float32", "float64", "string":
+		strval = fmt.Sprint(value)
+	default:
+		bytes, _ := json.Marshal(&value)
+		strval = string(bytes)
+	}
+	_, err := conn.Do("append", key, strval)
+	if err != nil {
+		logs.Error(err.Error())
+		return err
+	}
+	return nil
+}

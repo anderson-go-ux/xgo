@@ -5,13 +5,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"reflect"
 	"runtime/debug"
 	"strings"
+	"sync"
 
 	"github.com/beego/beego/logs"
 	"github.com/gin-gonic/gin"
 	val "github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -27,7 +30,7 @@ import (
 	7. 重复请求
 */
 
-type DBLogCallback func(interface{})
+type DBLogCallback func([]byte)
 
 type XHttp struct {
 	gin   *gin.Engine
@@ -35,6 +38,15 @@ type XHttp struct {
 
 	upgrader             websocket.Upgrader
 	request_log_callback DBLogCallback
+	idx_conn             sync.Map
+	conn_idx             sync.Map
+	connect_callback     XWsCallback
+	close_callback       XWsCallback
+	msgtype              sync.Map
+	msg_callback         sync.Map
+	default_msg_callback XWsDefaultMsgCallback
+	logwriter            io.Writer
+	logname              string
 }
 
 type XHttpContent struct {
@@ -160,7 +172,8 @@ func (this *XHttp) Init(cfgname string, token *XRedis) {
 	if this.token != nil {
 		go func() {
 			for {
-				logdata, _ := this.token.BLPop(fmt.Sprintf("%s:token:http_request", project), 86400)
+				logdata, _ := this.token.BLPop("token:http_request", 86400)
+				fmt.Println(string(logdata))
 				if logdata != nil && this.request_log_callback != nil {
 					this.request_log_callback(logdata)
 				}
@@ -190,6 +203,7 @@ func (this *XHttp) OnPostWithAuth(path string, handler XHttpHandler, auth string
 		}()
 		body, _ := io.ReadAll(gc.Request.Body)
 		strbody := string(body)
+		logs.Debug(gc.Request.URL.Path, strbody)
 		if len(strbody) == 0 {
 			strbody = "{}"
 		}
@@ -203,7 +217,7 @@ func (this *XHttp) OnPostWithAuth(path string, handler XHttpHandler, auth string
 			ctx.RespErr(2, "请在header填写:x-token")
 			return
 		}
-		rediskey := fmt.Sprintf("%v:token:%v", project, tokenstr)
+		rediskey := fmt.Sprintf("token:%v", tokenstr)
 		tokendata, _ := this.token.Get(rediskey)
 		if tokendata == nil {
 			ctx.RespErr(3, "未登录或登录已过期")
@@ -211,7 +225,7 @@ func (this *XHttp) OnPostWithAuth(path string, handler XHttpHandler, auth string
 		}
 		keystr := fmt.Sprintf("post%v%v", gc.Request.URL.Path, tokenstr)
 		reqid := Md5(keystr)
-		lockkey := fmt.Sprintf("%v:token:lock:%v", project, reqid)
+		lockkey := fmt.Sprintf("token:lock:%v", reqid)
 		if !this.token.SetNx(lockkey, "1", 10) {
 			ctx.RespErr(7, "请勿重复请求")
 			return
@@ -255,7 +269,7 @@ func (this *XHttp) OnPostWithAuth(path string, handler XHttpHandler, auth string
 			"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
 			"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp(), "Token": tokenstr}
 		strlog, _ := json.Marshal(&jlog)
-		this.token.RPush(fmt.Sprintf("%s:token:http_request", project), string(strlog))
+		this.token.RPush("token:http_request", string(strlog))
 		if len(auth) > 0 {
 			spauth := strings.Split(auth, ".")
 			m := spauth[0]
@@ -289,6 +303,17 @@ func (this *XHttp) OnPostWithAuth(path string, handler XHttpHandler, auth string
 				}
 			}
 		}
+		go func() {
+			filename := fmt.Sprintf("_log/gin_%v.log", GetLocalDate())
+			if this.logname != filename {
+				this.logname = filename
+				file, _ := os.OpenFile(filename, os.O_CREATE|os.O_APPEND, os.ModePerm)
+				this.logwriter = io.MultiWriter(file)
+			}
+			fbody, _ := json.Marshal(jbody)
+			text := fmt.Sprintf("[%v][%v][%v][%v]\r\n", GetLocalTime(), ctx.GetIp(), gc.Request.URL.Path, string(fbody))
+			this.logwriter.Write([]byte(text))
+		}()
 		handler(ctx)
 	})
 }
@@ -309,17 +334,28 @@ func (this *XHttp) OnPostNoAuth(path string, handler XHttpHandler) {
 			strbody = "{}"
 		}
 		ctx := &XHttpContent{gc, "", "", strbody}
-		if this.token != nil {
-			jbody := map[string]interface{}{}
-			err := json.Unmarshal([]byte(strbody), &jbody)
-			if err != nil {
-				ctx.RespErr(4, "参数必须是json格式")
-				return
-			}
-			jlog := gin.H{"ReqPath": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
-			strlog, _ := json.Marshal(&jlog)
-			this.token.RPush(fmt.Sprintf("%s:token:http_request", project), string(strlog))
+		jbody := map[string]interface{}{}
+		err := json.Unmarshal([]byte(strbody), &jbody)
+		if err != nil {
+			ctx.RespErr(4, "参数必须是json格式")
+			return
 		}
+		jlog := gin.H{"ReqPath": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
+		strlog, _ := json.Marshal(&jlog)
+		if this.token != nil {
+			this.token.RPush("token:http_request", string(strlog))
+		}
+		go func() {
+			filename := fmt.Sprintf("_log/gin_%v.log", GetLocalDate())
+			if this.logname != filename {
+				this.logname = filename
+				file, _ := os.OpenFile(filename, os.O_CREATE|os.O_APPEND, os.ModePerm)
+				this.logwriter = io.MultiWriter(file)
+			}
+			fbody, _ := json.Marshal(jbody)
+			text := fmt.Sprintf("[%v][%v][%v][%v]\r\n", GetLocalTime(), ctx.GetIp(), gc.Request.URL.Path, string(fbody))
+			this.logwriter.Write([]byte(text))
+		}()
 		handler(ctx)
 	})
 }
@@ -338,14 +374,14 @@ func (this *XHttp) DelToken(key string) {
 	if key == "" {
 		return
 	}
-	this.token.Del(fmt.Sprintf("%v:token:%s", project, key))
+	this.token.Del(fmt.Sprintf("token:%s", key))
 }
 
 func (this *XHttp) GetToken(key string) interface{} {
 	if this.token == nil {
 		return nil
 	}
-	data, _ := this.token.Get(fmt.Sprintf("%v:token:%s", project, key))
+	data, _ := this.token.Get(fmt.Sprintf("token:%s", key))
 	return data
 }
 
@@ -353,5 +389,88 @@ func (this *XHttp) RenewToken(key string) {
 	if this.token == nil {
 		return
 	}
-	this.token.Expire(fmt.Sprintf("%v:token:%s", project, key), 86400*7)
+	this.token.Expire(fmt.Sprintf("token:%s", key), 86400*7)
+}
+
+type XWsCallback func(string)
+type XWsMsgCallback func(string, interface{})
+type XWsDefaultMsgCallback func(string, string, interface{})
+
+type abumsgdata struct {
+	MsgId string      `json:"msgid"`
+	Data  interface{} `json:"data"`
+}
+
+func (this *XHttp) InitWs(url string) {
+	this.gin.GET(url, func(gc *gin.Context) {
+		ctx := &XHttpContent{gc, "", "", ""}
+		this.ws(ctx)
+	})
+}
+
+func (this *XHttp) ws(ctx *XHttpContent) {
+	conn, err := this.upgrader.Upgrade(ctx.Gin().Writer, ctx.Gin().Request, nil)
+	if err != nil {
+		logs.Error(err)
+		return
+	}
+	defer conn.Close()
+	id := uuid.New().String()
+	this.idx_conn.Store(id, conn)
+	this.conn_idx.Store(conn, id)
+	if this.connect_callback != nil {
+		this.connect_callback(id)
+	}
+	for {
+		mt, message, err := conn.ReadMessage()
+		this.msgtype.Store(id, mt)
+		if err != nil {
+			break
+		}
+		md := abumsgdata{}
+		err = json.Unmarshal(message, &md)
+		if err != nil {
+			break
+		}
+		if len(md.MsgId) == 0 {
+			break
+		}
+		callback, cbok := this.msg_callback.Load(md.MsgId)
+		if cbok {
+			go func() {
+				defer func() {
+					err := recover()
+					if err != nil {
+						logs.Error(err)
+						stack := debug.Stack()
+						logs.Error(string(stack))
+					}
+				}()
+				cb := callback.(XWsMsgCallback)
+				cb(id, md.Data)
+			}()
+		} else {
+			if this.default_msg_callback != nil {
+				go func() {
+					defer func() {
+						err := recover()
+						if err != nil {
+							logs.Error(err)
+							stack := debug.Stack()
+							logs.Error(string(stack))
+						}
+					}()
+					this.default_msg_callback(id, md.MsgId, md.Data)
+				}()
+			}
+		}
+	}
+	_, ccerr := this.idx_conn.Load(id)
+	if ccerr {
+		this.idx_conn.Delete(id)
+		this.conn_idx.Delete(conn)
+		if this.close_callback != nil {
+			this.close_callback(id)
+		}
+	}
 }

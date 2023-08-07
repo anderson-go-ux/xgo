@@ -54,7 +54,11 @@ func (this *XDb) Init(cfgname string) {
 	logs.Debug("连接数据库成功:", this.host, this.port, this.database)
 }
 
-func (this *XDb) Gorm()  *gorm.DB{
+func (this *XDb) conn() *sql.DB {
+	return this.db.DB()
+}
+
+func (this *XDb) Gorm() *gorm.DB {
 	return this.db
 }
 
