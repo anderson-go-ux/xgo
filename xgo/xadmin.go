@@ -24,74 +24,74 @@ type AdminTokenData struct {
 }
 
 type XAdminRole struct {
-	Id         uint   `gorm:"column:Id;primary_key;auto_increment;comment:'自增Id'"`
-	SellerId   int    `gorm:"column:SellerId;UNIQUE_INDEX:idx_sr;index:SellerId;comment:'运营商'"`
-	RoleName   string `gorm:"column:RoleName;UNIQUE_INDEX:idx_sr;index:RoleName;size:32;comment:'角色名'"`
-	Parent     string `gorm:"column:Parent;size:32;comment:'上级角色'"`
-	RoleData   string `gorm:"column:RoleData;type:text;comment:'权限数据'"`
-	State      int    `gorm:"column:State;default:1;comment:'状态 1开启,2关闭'"`
-	Memo       string `gorm:"column:Memo;size:256;comment:'备注'"`
-	CreateTime string `gorm:"column:CreateTime;type:datetime;default:now();comment:'创建时间'"`
+	Id         int    `gorm:"column:Id"`
+	SellerId   int    `gorm:"column:SellerId"`
+	RoleName   string `gorm:"column:RoleName"`
+	Parent     string `gorm:"column:Parent"`
+	RoleData   string `gorm:"column:RoleData"`
+	State      int    `gorm:"column:State"`
+	Memo       string `gorm:"column:Memo"`
+	CreateTime string `gorm:"column:CreateTime"`
 }
 
 type XAdminUser struct {
-	Id          uint   `gorm:"column:Id;primary_key;auto_increment;comment:'自增Id'"`
-	SellerId    int    `gorm:"column:SellerId;index:SellerId;comment:'运营商'"`
-	ChannelId   int    `gorm:"column:ChannelId;index:ChannelId;default:0;comment:'渠道商'"`
-	Account     string `gorm:"column:Account;size:32;index:Account;comment:'账号'"`
-	Password    string `gorm:"column:Password;size:64;comment:'登录密码'"`
-	RoleName    string `gorm:"column:RoleName;size:32;comment:'角色'"`
-	LoginGoogle string `gorm:"column:LoginGoogle;size:32;comment:'登录谷歌验证码'"`
-	OptGoogle   string `gorm:"column:OptGoogle;size:32;comment:'渠道商'"`
-	State       int    `gorm:"column:State;default:1;comment:'状态 1开启,2关闭'"`
-	Token       string `gorm:"column:Token;size:64;comment:'最后登录的token'"`
-	LoginCount  int    `gorm:"column:LoginCount;default:0;comment:'登录次数'"`
-	LoginTime   string `gorm:"column:LoginTime;type:datetime;default:now();comment:'最后登录时间'"`
-	LoginIp     string `gorm:"column:LoginIp;size:32;comment:'最后登录Ip'"`
-	Memo        string `gorm:"column:Memo;size:256;comment:'备注'"`
-	CreateTime  string `gorm:"column:CreateTime;type:datetime;default:now();comment:'创建时间'"`
+	Id          int    `gorm:"column:Id"`
+	SellerId    int    `gorm:"column:SellerId"`
+	ChannelId   int    `gorm:"column:ChannelId"`
+	Account     string `gorm:"column:Account"`
+	Password    string `gorm:"column:Password"`
+	RoleName    string `gorm:"column:RoleName"`
+	LoginGoogle string `gorm:"column:LoginGoogle"`
+	OptGoogle   string `gorm:"column:OptGoogle"`
+	State       int    `gorm:"column:State"`
+	Token       string `gorm:"column:Token"`
+	LoginCount  int    `gorm:"column:LoginCount"`
+	LoginTime   string `gorm:"column:LoginTime"`
+	LoginIp     string `gorm:"column:LoginIp"`
+	Memo        string `gorm:"column:Memo"`
+	CreateTime  string `gorm:"column:CreateTime"`
 }
 
 type XAdminLoginLog struct {
-	Id         uint   `gorm:"column:Id;primary_key;auto_increment;comment:'自增Id'"`
-	SellerId   int    `gorm:"column:SellerId;index:SellerId;comment:'运营商'"`
-	ChannelId  int    `gorm:"column:ChannelId;index:ChannelId;comment:'渠道商'"`
-	Account    string `gorm:"column:Account;size:32;index:Account;comment:'账号'"`
-	Token      string `gorm:"column:Token;size:64;comment:'登录的token'"`
-	LoginIp    string `gorm:"column:LoginIp;size:32;comment:'最近一次登录Ip'"`
-	Memo       string `gorm:"column:Memo;size:256;comment:'备注'"`
-	CreateTime string `gorm:"column:CreateTime;type:datetime;default:now();comment:'创建时间'"`
+	Id         int    `gorm:"column:Id"`
+	SellerId   int    `gorm:"column:SellerId"`
+	ChannelId  int    `gorm:"column:ChannelId"`
+	Account    string `gorm:"column:Account"`
+	Token      string `gorm:"column:Token"`
+	LoginIp    string `gorm:"column:LoginIp"`
+	Memo       string `gorm:"column:Memo"`
+	CreateTime string `gorm:"column:CreateTime"`
 }
 
 type XAdminOptLog struct {
-	Id         uint   `gorm:"column:Id;primary_key;auto_increment;comment:'自增Id'"`
-	SellerId   int    `gorm:"column:SellerId;index:SellerId;comment:'运营商'"`
-	ChannelId  int    `gorm:"column:ChannelId;index:ChannelId;comment:'渠道商'"`
-	Account    string `gorm:"column:Account;size:32;index:Account;comment:'账号'"`
-	ReqPath    string `gorm:"column:ReqPath;size:256;comment:'请求路径'"`
-	ReqData    string `gorm:"column:ReqData;size:256;comment:'请求参数'"`
-	Ip         string `gorm:"column:Ip;size:32;comment:'请求的Ip'"`
-	Memo       string `gorm:"column:Memo;size:256;comment:'备注'"`
-	CreateTime string `gorm:"column:CreateTime;type:datetime;default:now();comment:'创建时间'"`
+	Id         int    `gorm:"column:Id"`
+	SellerId   int    `gorm:"column:SellerId"`
+	ChannelId  int    `gorm:"column:ChannelId"`
+	Account    string `gorm:"column:Account"`
+	ReqPath    string `gorm:"column:ReqPath"`
+	ReqData    string `gorm:"column:ReqData"`
+	Ip         string `gorm:"column:Ip"`
+	Memo       string `gorm:"column:Memo"`
+	CreateTime string `gorm:"column:CreateTime"`
 }
 
 type XSeller struct {
-	Id         uint   `gorm:"column:Id;primary_key;auto_increment;comment:'自增Id'"`
-	SellerId   int    `gorm:"column:SellerId;index:SellerId;unique;comment:'运营商'"`
-	State      int    `gorm:"column:State;default:1;comment:'状态 1开启,2关闭'"`
-	SellerName string `gorm:"column:SellerName;size:32;comment:'运营商名称'"`
-	Memo       string `gorm:"column:Memo;size:256;comment:'备注'"`
-	CreateTime string `gorm:"column:CreateTime;type:datetime;default:now();comment:'创建时间'"`
+	Id         int    `gorm:"column:Id"`
+	SellerId   int    `gorm:"column:SellerId"`
+	State      int    `gorm:"column:State"`
+	SellerName string `gorm:"column:SellerName"`
+	Memo       string `gorm:"column:Memo"`
+	CreateTime string `gorm:"column:CreateTime"`
 }
 
 type XChannel struct {
-	Id          uint   `gorm:"column:Id;primary_key;auto_increment;comment:'自增Id'"`
-	SellerId    int    `gorm:"column:SellerId;index:SellerId;UNIQUE_INDEX:idx_sc;comment:'运营商'"`
-	ChannelId   int    `gorm:"column:ChannelId;index:ChannelId;UNIQUE_INDEX:idx_sc;comment:'渠道商'"`
-	State       int    `gorm:"column:State;default:1;comment:'状态 1开启,2关闭'"`
-	ChannelName string `gorm:"column:ChannelName;size:32;comment:'渠道名称'"`
-	Memo        string `gorm:"column:Memo;size:256;comment:'备注'"`
-	CreateTime  string `gorm:"column:CreateTime;type:datetime;default:now();comment:'创建时间'"`
+	Id          int    `gorm:"column:Id"`
+	SellerId    int    `gorm:"column:SellerId"`
+	ChannelId   int    `gorm:"column:ChannelId"`
+	State       int    `gorm:"column:State"`
+	ChannelName string `gorm:"column:ChannelName"`
+	Memo        string `gorm:"column:Memo"`
+	CreateTime  string `gorm:"column:CreateTime"`
 }
 
 func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
@@ -99,19 +99,13 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 	thisdb = db
 	thisredis = redis
 	if env != "dev" {
-		db.Gorm().Table("x_admin_role").AutoMigrate(&XAdminRole{})
-		db.Gorm().Table("x_admin_user").AutoMigrate(&XAdminUser{})
-		db.Gorm().Table("x_admin_login_log").AutoMigrate(&XAdminLoginLog{})
-		db.Gorm().Table("x_admin_opt_log").AutoMigrate(&XAdminOptLog{})
-		db.Gorm().Table("x_seller").AutoMigrate(&XSeller{})
-		db.Gorm().Table("x_channel").AutoMigrate(&XChannel{})
 		var count int
 		db.Gorm().Table("x_seller").Count(&count)
 		if count == 0 {
 			seller := XSeller{}
 			seller.SellerId = 1
 			seller.SellerName = "初始运营商"
-			db.Gorm().Create(&seller)
+			db.Gorm().Table("x_seller").Create(&seller)
 		}
 		db.Gorm().Table("x_channel").Count(&count)
 		if count == 0 {
@@ -119,7 +113,7 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 			channel.SellerId = 1
 			channel.ChannelId = 1
 			channel.ChannelName = "初始渠道"
-			db.Gorm().Create(&channel)
+			db.Gorm().Table("x_channel").Create(&channel)
 		}
 		auth_init(db, fullauth)
 	}
@@ -132,6 +126,7 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 		drop table x_admin_login_log;
 	*/
 	http.OnPostNoAuth("/sapi/user_login", user_login)
+	http.OnPostNoAuth("/sapi/user_logout", user_logout)
 	http.OnPostWithAuth("/sapi/get_seller_names", get_seller_names, "", false, "")
 	http.OnPostWithAuth("/sapi/get_channel_names", get_channel_names, "", false, "")
 	http.OnPostWithAuth("/sapi/get_role_names", get_role_names, "", false, "")
@@ -156,13 +151,19 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 	http.OnPostWithAuth("/sapi/add_admin_user", add_admin_user, "系统管理.账号管理.增", true, "添加账号")
 	http.OnPostWithAuth("/sapi/modify_admin_user", modify_admin_user, "系统管理.账号管理.改", true, "修改账号")
 	http.OnPostWithAuth("/sapi/delete_admin_user", delete_admin_user, "系统管理.账号管理.删", true, "删除账号")
+	http.OnPostWithAuth("/sapi/modify_admin_user_google", modify_admin_user_google, "系统管理.账号管理.改", true, "修改管理员验证码")
 
 	http.OnPostWithAuth("/sapi/get_login_log", get_login_log, "系统管理.登录日志.查", false, "")
 	http.OnPostWithAuth("/sapi/get_opt_log", get_opt_log, "系统管理.操作日志.查", false, "")
 }
 
-func GetAdminToken(token string) *AdminTokenData {
-	return nil
+func GetAdminToken(ctx *XHttpContent) *AdminTokenData {
+	tokendata := AdminTokenData{}
+	err := json.Unmarshal([]byte(ctx.TokenData), &tokendata)
+	if err != nil {
+		return nil
+	}
+	return &tokendata
 }
 
 func auth_init(db *XDb, fullauth string) {
@@ -177,26 +178,26 @@ func auth_init(db *XDb, fullauth string) {
 	jbytes, _ := json.Marshal(&jdata)
 	authstr := string(jbytes)
 	sellers := []XSeller{}
-	thisdb.Gorm().Find(&sellers)
+	thisdb.Gorm().Table("x_seller").Find(&sellers)
 	for i := 0; i < len(sellers); i++ {
 		role := XAdminRole{}
-		err := thisdb.Gorm().Where("SellerId = ? and RoleName = '运营商超管'", sellers[i].SellerId).First(&role).Error
+		err := thisdb.Gorm().Table("x_admin_role").Where("SellerId = ? and RoleName = '运营商超管'", sellers[i].SellerId).First(&role).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			role.SellerId = sellers[i].SellerId
 			role.Parent = "god"
 			role.RoleName = "运营商超管"
 			role.RoleData = authstr
-			thisdb.Gorm().Create(&role)
+			thisdb.Gorm().Table("x_admin_role").Create(&role)
 
 		}
 		user := XAdminUser{}
-		err = thisdb.Gorm().Where("SellerId = ?", sellers[i].SellerId).First(&user).Error
+		err = thisdb.Gorm().Table("x_admin_user").Where("SellerId = ?", sellers[i].SellerId).First(&user).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			user.SellerId = sellers[i].SellerId
 			user.Account = fmt.Sprintf("admin%v", user.SellerId)
 			user.Password = Md5(Md5("admin"))
 			user.RoleName = "运营商超管"
-			thisdb.Gorm().Create(&user)
+			thisdb.Gorm().Table("x_admin_user").Create(&user)
 
 		}
 	}
@@ -204,10 +205,10 @@ func auth_init(db *XDb, fullauth string) {
 	db.conn().Exec(sql, authstr, "运营商超管")
 
 	super := XAdminRole{}
-	err := thisdb.Gorm().Where("SellerId = -1 and RoleName = '超级管理员'").First(&super).Error
+	err := thisdb.Gorm().Table("x_admin_role").Where("SellerId = -1 and RoleName = '超级管理员'").First(&super).Error
 	if super.RoleData != fullauth {
 		roles := []XAdminRole{}
-		thisdb.Gorm().Find(&roles)
+		thisdb.Gorm().Table("x_admin_role").Find(&roles)
 		for i := 0; i < len(roles); i++ {
 			if roles[i].RoleName == "超级管理员" {
 				continue
@@ -230,7 +231,7 @@ func auth_init(db *XDb, fullauth string) {
 		super.RoleName = "超级管理员"
 		super.Parent = "god"
 		super.RoleData = fullauth
-		thisdb.Gorm().Create(&super)
+		thisdb.Gorm().Table("x_admin_role").Create(&super)
 	} else {
 		sql = "update x_admin_role set RoleData = ? where RoleName = ?"
 		thisdb.Exec(sql, fullauth, "超级管理员")
@@ -390,6 +391,20 @@ func user_login(ctx *XHttpContent) {
 	ctx.Put("Ip", ctx.GetIp())
 	ctx.Put("LoginCount", user.LoginCount)
 	ctx.Put("AuthData", jauth)
+	ctx.RespOK()
+}
+
+func user_logout(ctx *XHttpContent) {
+	type RequestData struct {
+		Token string
+	}
+	reqdata := RequestData{}
+	if ctx.RequestData(&reqdata) != nil {
+		return
+	}
+	if reqdata.Token != "" {
+		thishttp.DelToken(reqdata.Token)
+	}
 	ctx.RespOK()
 }
 
@@ -929,7 +944,126 @@ func delete_admin_user(ctx *XHttpContent) {
 	ctx.RespOK()
 }
 
+func modify_admin_user_google(ctx *XHttpContent) {
+	type RequestData struct {
+		SellerId   int    `validate:"required" `
+		Account    string `validate:"required"`
+		CodeType   int    `validate:"required" `
+		GoogleCode string `validate:"required" `
+	}
+	reqdata := RequestData{}
+	if ctx.RequestData(&reqdata) != nil {
+		return
+	}
+	token := GetAdminToken(ctx)
+
+	lockkey := fmt.Sprintf("lock:admin_change_google:%v", reqdata.Account)
+	if !thisredis.GetLock(lockkey, 10) {
+		ctx.RespErr("操作频繁,请稍后再试")
+		return
+	}
+
+	user := XAdminUser{}
+	err := thisdb.Gorm().Where("SellerId = ? and Account = ?", reqdata.SellerId, reqdata.Account).Table("x_admin_user").First(&user).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		ctx.RespErr("管理员不存在")
+		return
+	}
+
+	me := XAdminUser{}
+	thisdb.Gorm().Where("SellerId = ? and Account = ?", token.SellerId, token.Account).Table("x_admin_user").First(&me)
+
+	if reqdata.Account != token.Account {
+		if me.OptGoogle == "" {
+			ctx.RespErr(fmt.Sprintf("请先设置账号 %v 的操作验证码", token.Account))
+			return
+		}
+		if strings.Index(env, "prd") >= 0 && VerifyGoogleCode(me.OptGoogle, reqdata.GoogleCode) {
+			ctx.RespErr("验证码不正确")
+			return
+		}
+	} else {
+		if reqdata.CodeType == 2 && me.LoginGoogle == "" {
+			if me.OptGoogle == "" {
+				ctx.RespErr(fmt.Sprintf("请先设置账号 %v 的登录验证码", me.Account))
+				return
+			}
+		}
+		if me.OptGoogle != "" {
+			if strings.Index(env, "prd") >= 0 && VerifyGoogleCode(me.OptGoogle, reqdata.GoogleCode) {
+				ctx.RespErr(fmt.Sprintf("验证码不正确,请输入账号 %v 的操作验证码", me.Account))
+				return
+			}
+		}
+		if me.LoginGoogle != "" {
+			if strings.Index(env, "prd") >= 0 && VerifyGoogleCode(me.LoginGoogle, reqdata.GoogleCode) {
+				ctx.RespErr(fmt.Sprintf("验证码不正确,请输入账号 %v 的登录 验证码", me.Account))
+				return
+			}
+		}
+	}
+	seller := XSeller{}
+	thisdb.Gorm().Table("x_seller").Where("SellerId = ?", reqdata.SellerId).First(&seller)
+	if reqdata.CodeType == 1 {
+		verifykey := NewGoogleSecret()
+		verifyurl := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=%s-登录", reqdata.Account, verifykey, seller.SellerName)
+		thisdb.Exec("update x_admin_user set LoginGoogle = ? where Id = ?", verifykey, user.Id)
+		ctx.Put("url", verifyurl)
+		ctx.RespOK()
+	} else if reqdata.CodeType == 2 {
+		verifykey := NewGoogleSecret()
+		verifyurl := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=%s-操作", reqdata.Account, verifykey, seller.SellerName)
+		thisdb.Exec("update x_admin_user set OptGoogle = ? where Id = ?", verifykey, user.Id)
+		ctx.Put("url", verifyurl)
+		ctx.RespOK()
+	}
+}
+
 func get_login_log(ctx *XHttpContent) {
+	type RequestData struct {
+		Page      int
+		PageSize  int
+		SellerId  int `validate:"required" `
+		ChannelId int
+		Account   string
+		LoginIp   string
+		StartTime string
+		EndTime   string
+	}
+	reqdata := RequestData{}
+	if ctx.RequestData(&reqdata) != nil {
+		return
+	}
+	if reqdata.Page <= 0 {
+		reqdata.Page = 1
+	}
+	if reqdata.PageSize <= 0 {
+		reqdata.PageSize = 15
+	}
+	if reqdata.StartTime != "" {
+		reqdata.StartTime = UtcToLocalTime(reqdata.StartTime)
+	}
+	if reqdata.EndTime != "" {
+		reqdata.EndTime = UtcToLocalTime(reqdata.EndTime)
+	}
+	db := thisdb.Gorm().Table("x_admin_login_log")
+	db = db.Where("SellerId = ?", reqdata.SellerId)
+	db = thisdb.Where(db, "ChannelId = ?", reqdata.ChannelId, int(0))
+	db = thisdb.Where(db, "Account = ?", reqdata.Account, "")
+	db = thisdb.Where(db, "LoginIp = ?", reqdata.LoginIp, "")
+	db = thisdb.Where(db, "CreateTime >= ?", reqdata.StartTime, "")
+	db = thisdb.Where(db, "CreateTime < ?", reqdata.EndTime, "")
+	offset := (reqdata.Page - 1) * reqdata.PageSize
+	logs := []XAdminLoginLog{}
+	db.Offset(offset).Limit(reqdata.PageSize).Find(&logs)
+	logdata := []map[string]interface{}{}
+	for i := 0; i < len(logs); i++ {
+		mapdata := ObjectToMap(logs[i])
+		(*mapdata)["IpLocation"] = GetIpLocation(logs[i].LoginIp)
+		logdata = append(logdata, *mapdata)
+	}
+	ctx.Put("data", logdata)
+	ctx.RespOK()
 }
 
 func get_opt_log(ctx *XHttpContent) {

@@ -1,6 +1,7 @@
 package xgo
 
 import (
+	"bufio"
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha1"
@@ -13,15 +14,18 @@ import (
 	"strings"
 	"time"
 
+	crand "crypto/rand"
 	mrand "math/rand"
 
 	"github.com/beego/beego/logs"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
+	"github.com/yinheli/qqwry"
 )
 
 var env string
 var project string
+var ipdata string
 
 /*
 go get github.com/beego/beego/logs
@@ -61,6 +65,11 @@ func Init() {
 	}
 	env = GetConfigString("server.env", true, "")
 	project = GetConfigString("server.project", true, "")
+	ipdata = GetConfigString("server.ipdata", false, "")
+}
+
+func Env() string {
+	return env
 }
 
 func Prjoect() string {
@@ -219,6 +228,20 @@ func VerifyGoogleCode(secret string, code string) bool {
 	return false
 }
 
+func abuGoogleRandStr(strSize int) string {
+	dictionary := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	var bytes = make([]byte, strSize)
+	_, _ = crand.Read(bytes)
+	for k, v := range bytes {
+		bytes[k] = dictionary[v%byte(len(dictionary))]
+	}
+	return string(bytes)
+}
+
+func NewGoogleSecret() string {
+	return strings.ToUpper(abuGoogleRandStr(32))
+}
+
 func ReadAllText(path string) string {
 	bytes, err := os.ReadFile(path)
 	if err != nil {
@@ -321,4 +344,78 @@ func GetDbError(data *map[string]interface{}) *DBError {
 		err.ErrMsg = InterfaceToString(msg)
 	}
 	return &err
+}
+
+func GetIpLocation(ip string) string {
+	if ipdata == "" {
+		return ""
+	}
+	iptool := qqwry.NewQQwry("./config/ipdata.dat")
+	if strings.Index(ip, ".") > 0 {
+		iptool.Find(ip)
+		return fmt.Sprintf("%s %s", iptool.Country, iptool.City)
+	} else {
+		return ""
+	}
+}
+
+func BackupDb(db *XDb, path string) {
+	if env != "dev" {
+		return
+	}
+	var strall string
+	var tables []string
+	data, _ := db.Query("SHOW FULL TABLES")
+	for i := 0; i < len(*data); i++ {
+		for k, v := range (*data)[i] {
+			if strings.Index(k, "Tables_in_") >= 0 {
+				tables = append(tables, v.(string))
+				td, _ := db.Query(fmt.Sprint("show create table ", v))
+				s := (*td)[0]["Create Table"].(string)
+				s = strings.Replace(s, "`", "", -1)
+				s = strings.Replace(s, "DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci", "", -1)
+				s = strings.Replace(s, "CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci", "", -1)
+				s = strings.Replace(s, "CREATE TABLE", "CREATE TABLE IF NOT EXISTS ", -1)
+
+				s = strings.Replace(s, "DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci", "", -1)
+				s = strings.Replace(s, "COLLATE utf8mb4_general_ci", "", -1)
+				s = strings.Replace(s, "CREATE TABLE", "CREATE TABLE IF NOT EXISTS ", -1)
+				s = strings.Replace(s, "IF NOT EXISTS  IF NOT EXISTS", "IF NOT EXISTS", -1)
+
+				idx := strings.Index(s, "AUTO_INCREMENT=")
+				if idx > 0 {
+					es := s[idx:]
+					eidx := strings.Index(es, " ")
+					es = es[:eidx]
+					s = strings.Replace(s, es, "AUTO_INCREMENT=0 ", -1)
+				}
+				s += ";\r\n\r\n"
+				strall += s
+
+			}
+		}
+	}
+	strall += "/*\r\n"
+	for i := 0; i < len(tables); i++ {
+		td, _ := db.Query(fmt.Sprintf("DESCRIBE %v", tables[i]))
+		strall += fmt.Sprintf("type %v struct {\r\n", tables[i])
+		for j := 0; j < len(*td); j++ {
+			sname := (*td)[j]["Type"].(string)
+			tname := ""
+			if strings.Index(sname, "int") == 0 || strings.Index(sname, "bigint") == 0 || strings.Index(sname, "unsigned") == 0 || strings.Index(sname, "timestamp") == 0 {
+				tname = "int"
+			} else if strings.Index(sname, "varchar") == 0 || strings.Index(sname, "datetime") == 0 || strings.Index(sname, "date") == 0 || strings.Index(sname, "text") == 0 {
+				tname = "string"
+			} else if strings.Index(sname, "decimal") == 0 {
+				tname = "float64"
+			}
+			strall += fmt.Sprintf("\t%v %v `gorm:\"column:%v\"`\r\n", (*td)[j]["Field"], tname, (*td)[j]["Field"])
+		}
+		strall += "}\r\n\r\n"
+	}
+	strall += "*/\r\n"
+	file, _ := os.OpenFile(path, os.O_TRUNC|os.O_CREATE, 0666)
+	write := bufio.NewWriter(file)
+	write.WriteString(strall)
+	write.Flush()
 }
