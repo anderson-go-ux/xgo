@@ -117,7 +117,7 @@ type XConfig struct {
 	CreateTime  string `gorm:"column:CreateTime"`
 }
 
-func AdminBeforeModifyConfig(cb func(*ModifyConfigData)) {
+func AdminBeforeModifyConfig(cb func(*AdminModifyConfigData)) {
 	beforeModifyConfig = cb
 }
 
