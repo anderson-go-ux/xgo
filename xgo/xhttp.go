@@ -173,7 +173,6 @@ func (this *XHttp) Init(cfgname string, token *XRedis) {
 		go func() {
 			for {
 				logdata, _ := this.token.BLPop("token:http_request", 86400)
-				fmt.Println(string(logdata))
 				if logdata != nil && this.request_log_callback != nil {
 					this.request_log_callback(logdata)
 				}
@@ -188,10 +187,10 @@ func (this *XHttp) Static(relativePaths string, root string) {
 }
 
 func (this *XHttp) OnPost(path string, handler XHttpHandler) {
-	this.OnPostWithAuth(path, handler, "", false)
+	this.OnPostWithAuth(path, handler, "", false, "")
 }
 
-func (this *XHttp) OnPostWithAuth(path string, handler XHttpHandler, auth string, googleverify bool) {
+func (this *XHttp) OnPostWithAuth(path string, handler XHttpHandler, auth string, googleverify bool, optname string) {
 	this.gin.POST(path, func(gc *gin.Context) {
 		defer func() {
 			err := recover()
@@ -203,7 +202,6 @@ func (this *XHttp) OnPostWithAuth(path string, handler XHttpHandler, auth string
 		}()
 		body, _ := io.ReadAll(gc.Request.Body)
 		strbody := string(body)
-		logs.Debug(gc.Request.URL.Path, strbody)
 		if len(strbody) == 0 {
 			strbody = "{}"
 		}
@@ -267,7 +265,7 @@ func (this *XHttp) OnPostWithAuth(path string, handler XHttpHandler, auth string
 		}
 		jlog := H{"ReqPath": gc.Request.URL.Path,
 			"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
-			"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp(), "Token": tokenstr}
+			"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp(), "Token": tokenstr, "OptName": optname}
 		strlog, _ := json.Marshal(&jlog)
 		this.token.RPush("token:http_request", string(strlog))
 		if len(auth) > 0 {
@@ -304,6 +302,9 @@ func (this *XHttp) OnPostWithAuth(path string, handler XHttpHandler, auth string
 			}
 		}
 		go func() {
+			defer func() {
+				recover()
+			}()
 			filename := fmt.Sprintf("_log/gin_%v.log", GetLocalDate())
 			if this.logname != filename {
 				this.logname = filename
@@ -364,7 +365,7 @@ func (this *XHttp) SetToken(key string, data interface{}) {
 	if this.token == nil {
 		return
 	}
-	this.token.Set(fmt.Sprintf("%v:token:%s", project, key), data, 86400*7)
+	this.token.Set(fmt.Sprintf("token:%s", key), data, 86400*7)
 }
 
 func (this *XHttp) DelToken(key string) {

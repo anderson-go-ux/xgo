@@ -2,7 +2,7 @@ server:
   env: test
   project: xgotest
   http:
-    port: 3353
+    port: 4034
   db:
     host: 127.0.0.1
     port: 3306
@@ -15,10 +15,10 @@ server:
     connmaxopen: 100 #最大打开连接数
     logmode: false
   redis:
-    host: 10.10.234.221
-    port: 19879
-    db: 5
-    password: dT&@h3ID^scKCahF #Ho9mpyeqaILEOfjM
+    host: 127.0.0.1
+    port: 6379
+    db: 15
+    password: root #Ho9mpyeqaILEOfjM
     maxidle: 10 #最大的空闲连接数，表示即使没有redis连接时依然可以保持N个空闲的连接，而不被清除，随时处于待命状态。
     maxactive: 100 #最大的激活连接数，表示同时最多有N个连接
     idletimeout: 60 #最大的空闲连接等待时间，超过此时间后，空闲连接将被关闭

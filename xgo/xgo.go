@@ -40,13 +40,14 @@ go get code.google.com/p/mahonia
 go get github.com/360EntSecGroup-Skylar/excelize
 go clean -modcache
 */
+
 type H map[string]any
 
 func Init() {
 	mrand.NewSource(time.Now().UnixNano())
 	gin.SetMode(gin.ReleaseMode)
 	logs.EnableFuncCallDepth(true)
-	logs.SetLogFuncCallDepth(3)
+	logs.SetLogFuncCallDepth(5)
 	logs.SetLogger(logs.AdapterFile, `{"filename":"_log/logfile.log","maxsize":10485760}`)
 	logs.SetLogger(logs.AdapterConsole, `{"color":true}`)
 	viper.AddConfigPath("./")

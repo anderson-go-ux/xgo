@@ -2,6 +2,7 @@ package xgo
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -125,8 +126,18 @@ func (this *XRedis) Publish(key string, value interface{}) error {
 
 func (this *XRedis) GetLock(key string, expire_second int) bool {
 	key = fmt.Sprintf("%v:%v", project, key)
-	r := this.SetNx(key, "1", expire_second)
-	return r
+	conn := this.redispool.Get()
+	defer conn.Close()
+	r, err := conn.Do("setnx", key, "1")
+	if err != nil {
+		logs.Error(err.Error())
+		return false
+	}
+	ir := r.(int64)
+	if ir == 1 && expire_second > 0 {
+		conn.Do("expire", key, expire_second)
+	}
+	return ir == 1
 }
 
 func (this *XRedis) ReleaseLock(key string) {
@@ -872,6 +883,9 @@ func (this *XRedis) Get(key string) ([]byte, error) {
 		logs.Error(err.Error())
 		return nil, err
 	}
+	if ret == nil {
+		return nil, errors.New("not found")
+	}
 	return ret.([]byte), nil
 }
 
@@ -913,7 +927,6 @@ func (this *XRedis) SetNx(key string, value interface{}, expire_second int) bool
 	key = fmt.Sprintf("%v:%v", project, key)
 	conn := this.redispool.Get()
 	defer conn.Close()
-	key = fmt.Sprintf("%v:%v", project, key)
 	typename := reflect.TypeOf(value).Name()
 	strval := ""
 	switch typename {
@@ -930,7 +943,7 @@ func (this *XRedis) SetNx(key string, value interface{}, expire_second int) bool
 	}
 	ir := r.(int64)
 	if ir == 1 && expire_second > 0 {
-		this.Expire(key, expire_second)
+		conn.Do("expire", key, expire_second)
 	}
 	return ir == 1
 }
