@@ -9,7 +9,7 @@ import (
 
 	"github.com/beego/beego/logs"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 var thisdb *XDb
