@@ -13,7 +13,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 )
 
-type AbuRedisSubCallback func(string)
+type XRedisSubCallback func(string)
 type XRedis struct {
 	redispool          *redis.Pool
 	pubconnection      *redis.PubSubConn
@@ -67,13 +67,13 @@ func (this *XRedis) Init(cfgname string) {
 	logs.Debug("连接redis 成功:", host, port, db)
 }
 
-func (this *XRedis) getcallback(channel string) AbuRedisSubCallback {
+func (this *XRedis) getcallback(channel string) XRedisSubCallback {
 	channel = fmt.Sprintf("%v:%v", project, channel)
 	cb, ok := this.subscribecallbacks.Load(channel)
 	if !ok {
 		return nil
 	}
-	return cb.(AbuRedisSubCallback)
+	return cb.(XRedisSubCallback)
 }
 
 func (this *XRedis) subscribe(channels ...string) {
@@ -97,7 +97,7 @@ func (this *XRedis) subscribe(channels ...string) {
 }
 
 // ////////////////////////////////////////////////////////////////////////////////
-func (this *XRedis) Subscribe(channel string, callback AbuRedisSubCallback) {
+func (this *XRedis) Subscribe(channel string, callback XRedisSubCallback) {
 	channel = fmt.Sprintf("%v:%v", project, channel)
 	this.subscribecallbacks.Store(channel, callback)
 	this.subscribe(channel)
