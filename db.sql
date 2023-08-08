@@ -84,12 +84,13 @@ CREATE TABLE IF NOT EXISTS  x_channel (
 CREATE TABLE IF NOT EXISTS  x_config (
   Id bigint unsigned NOT NULL AUTO_INCREMENT,
   SellerId int DEFAULT NULL COMMENT '运营商',
-  ChannelId int DEFAULT NULL COMMENT '渠道',
+  ChannelId int DEFAULT '0' COMMENT '渠道',
   ConfigName varchar(64) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT '配置名',
-  ConfigValue varchar(1204) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT '配置值',
+  ConfigValue text CHARACTER SET utf8mb4  COMMENT '配置值',
   EditAble int DEFAULT '1' COMMENT '是否可编辑',
   ShowAble int DEFAULT '1' COMMENT '是否在后台显示',
   ForClient int DEFAULT '2' COMMENT '该配置客户端是否能获取',
+  Memo varchar(1024)  DEFAULT NULL COMMENT '备注',
   CreateTime datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (Id),
   KEY SellerId (SellerId),
@@ -180,6 +181,7 @@ type x_config struct {
 	EditAble int `gorm:"column:EditAble"`
 	ShowAble int `gorm:"column:ShowAble"`
 	ForClient int `gorm:"column:ForClient"`
+	Memo string `gorm:"column:Memo"`
 	CreateTime string `gorm:"column:CreateTime"`
 }
 

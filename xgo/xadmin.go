@@ -16,6 +16,19 @@ var thisdb *XDb
 var thisredis *XRedis
 var thishttp *XHttp
 
+type StructConfig struct {
+	ChannelId   int
+	ConfigName  string
+	ConfigValue string
+}
+type ModifyConfigData struct {
+	SellerId int `validate:"required" `
+	Config   []StructConfig
+}
+
+var beforeModifyConfig func(ModifyConfigData) ModifyConfigData
+var afterAddChannel func(int)
+
 type AdminTokenData struct {
 	Account   string
 	SellerId  int
@@ -94,6 +107,24 @@ type XChannel struct {
 	CreateTime  string `gorm:"column:CreateTime"`
 }
 
+type XConfig struct {
+	Id          int    `gorm:"column:Id"`
+	SellerId    int    `gorm:"column:SellerId"`
+	ChannelId   int    `gorm:"column:ChannelId"`
+	ConfigName  string `gorm:"column:ConfigName"`
+	ConfigValue string `gorm:"column:ConfigValue"`
+	ForClient   int    `gorm:"column:ForClient"`
+	CreateTime  string `gorm:"column:CreateTime"`
+}
+
+func AdminBeforeModifyConfig(cb func(ModifyConfigData) ModifyConfigData) {
+	beforeModifyConfig = cb
+}
+
+func AdminAfterAddChannel(cb func(int)) {
+	afterAddChannel = cb
+}
+
 func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 	thishttp = http
 	thisdb = db
@@ -155,6 +186,9 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 
 	http.OnPostWithAuth("/sapi/get_login_log", get_login_log, "系统管理.登录日志.查", false, "")
 	http.OnPostWithAuth("/sapi/get_opt_log", get_opt_log, "系统管理.操作日志.查", false, "")
+
+	http.OnPostWithAuth("/sapi/get_system_config", get_system_config, "系统管理.系统设置.查", false, "")
+	http.OnPostWithAuth("/sapi/modify_system_config", modify_system_config, "系统管理.系统设置.改", false, "")
 }
 
 func GetAdminToken(ctx *XHttpContent) *AdminTokenData {
@@ -188,7 +222,6 @@ func auth_init(db *XDb, fullauth string) {
 			role.RoleName = "运营商超管"
 			role.RoleData = authstr
 			thisdb.Gorm().Table("x_admin_role").Create(&role)
-
 		}
 		user := XAdminUser{}
 		err = thisdb.Gorm().Table("x_admin_user").Where("SellerId = ?", sellers[i].SellerId).First(&user).Error
@@ -379,6 +412,7 @@ func user_login(ctx *XHttpContent) {
 	log.Account = reqdata.Account
 	log.Token = token
 	log.LoginIp = ctx.GetIp()
+	log.CreateTime = GetLocalTime()
 	thisdb.Gorm().Table("x_admin_login_log").Create(&log)
 	jauth := make(map[string]interface{})
 	json.Unmarshal([]byte(tokendata.AuthData), &jauth)
@@ -654,6 +688,9 @@ func add_channel(ctx *XHttpContent) {
 		ctx.Put("error", err.Error())
 		ctx.RespErr("添加失败")
 		return
+	}
+	if afterAddChannel != nil {
+		afterAddChannel(reqdata.ChannelId)
 	}
 	ctx.RespOK()
 }
@@ -1067,4 +1104,48 @@ func get_login_log(ctx *XHttpContent) {
 }
 
 func get_opt_log(ctx *XHttpContent) {
+}
+
+func get_system_config(ctx *XHttpContent) {
+	type RequestData struct {
+		SellerId   int `validate:"required" `
+		ChannelId  int
+		ConfigName []string
+	}
+	reqdata := RequestData{}
+	if ctx.RequestData(&reqdata) != nil {
+		return
+	}
+	db := thisdb.Gorm().Table("x_config")
+	db = db.Where("SellerId = ?", reqdata.SellerId)
+	if reqdata.ChannelId == 0 {
+		db = db.Where("ChannelId = ?", 0)
+	} else {
+		db = db.Where("ChannelId = 0 or ChannelId = ?", reqdata.ChannelId)
+	}
+	if len(reqdata.ConfigName) > 0 {
+		db = db.Where("ConfigName in (?)", reqdata.ConfigName)
+	}
+	config := []XConfig{}
+	db.Find(&config)
+	for i := 0; i < len(config); i++ {
+		config[i].CreateTime = LocalTimeToUtc(config[i].CreateTime)
+	}
+	ctx.Put("data", config)
+	ctx.RespOK()
+}
+
+func modify_system_config(ctx *XHttpContent) {
+	reqdata := ModifyConfigData{}
+	if ctx.RequestData(&reqdata) != nil {
+		return
+	}
+	if beforeModifyConfig != nil {
+		reqdata = beforeModifyConfig(reqdata)
+	}
+	for i := 0; i < len(reqdata.Config); i++ {
+		sql := "update x_config set ConfigValue = ? where SellerId = ? and ChannelId = ? and ConfigName = ?"
+		thisdb.Exec(sql, reqdata.Config[i].ConfigValue, reqdata.SellerId, reqdata.Config[i].ChannelId, reqdata.Config[i].ConfigName)
+	}
+	ctx.RespOK()
 }
