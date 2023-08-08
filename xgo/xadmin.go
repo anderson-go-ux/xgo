@@ -809,6 +809,7 @@ func modify_role(ctx *XHttpContent) {
 	type RequestData struct {
 		SellerId int    `validate:"required"`
 		RoleName string `validate:"required"`
+		Parent   string `validate:"required"`
 		RoleData string
 		State    int
 		Memo     string
