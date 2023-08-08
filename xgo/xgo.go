@@ -183,24 +183,24 @@ func GetMapFloat(mp *map[string]interface{}, field string) float64 {
 	return InterfaceToFloat(v)
 }
 
-func abuOneTimePassword(key []byte, value []byte) uint32 {
+func onetimepassword(key []byte, value []byte) uint32 {
 	hmacSha1 := hmac.New(sha1.New, key)
 	hmacSha1.Write(value)
 	hash := hmacSha1.Sum(nil)
 	offset := hash[len(hash)-1] & 0x0F
 	hashParts := hash[offset : offset+4]
 	hashParts[0] = hashParts[0] & 0x7F
-	number := abuToUint32(hashParts)
+	number := touint32(hashParts)
 	pwd := number % 1000000
 	return pwd
 }
 
-func abuToUint32(bytes []byte) uint32 {
+func touint32(bytes []byte) uint32 {
 	return (uint32(bytes[0]) << 24) + (uint32(bytes[1]) << 16) +
 		(uint32(bytes[2]) << 8) + uint32(bytes[3])
 }
 
-func abuToBytes(value int64) []byte {
+func tobytes(value int64) []byte {
 	var result []byte
 	mask := int64(0xFF)
 	shifts := [8]uint16{56, 48, 40, 32, 24, 16, 8, 0}
@@ -217,7 +217,7 @@ func GetGoogleCode(secret string) int32 {
 		return 0
 	}
 	epochSeconds := time.Now().Unix() + 0
-	return int32(abuOneTimePassword(key, abuToBytes(epochSeconds/30)))
+	return int32(onetimepassword(key, tobytes(epochSeconds/30)))
 }
 
 func VerifyGoogleCode(secret string, code string) bool {
@@ -228,7 +228,7 @@ func VerifyGoogleCode(secret string, code string) bool {
 	return false
 }
 
-func abuGoogleRandStr(strSize int) string {
+func googlerandstr(strSize int) string {
 	dictionary := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	var bytes = make([]byte, strSize)
 	_, _ = crand.Read(bytes)
@@ -239,7 +239,7 @@ func abuGoogleRandStr(strSize int) string {
 }
 
 func NewGoogleSecret() string {
-	return strings.ToUpper(abuGoogleRandStr(32))
+	return strings.ToUpper(googlerandstr(32))
 }
 
 func ReadAllText(path string) string {
