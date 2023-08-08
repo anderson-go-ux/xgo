@@ -21,12 +21,12 @@ type StructConfig struct {
 	ConfigName  string
 	ConfigValue string
 }
-type ModifyConfigData struct {
+type AdminModifyConfigData struct {
 	SellerId int `validate:"required" `
 	Config   []StructConfig
 }
 
-var beforeModifyConfig func(ModifyConfigData) ModifyConfigData
+var beforeModifyConfig func(*AdminModifyConfigData)
 var afterAddChannel func(int)
 
 type AdminTokenData struct {
@@ -117,7 +117,7 @@ type XConfig struct {
 	CreateTime  string `gorm:"column:CreateTime"`
 }
 
-func AdminBeforeModifyConfig(cb func(ModifyConfigData) ModifyConfigData) {
+func AdminBeforeModifyConfig(cb func(*ModifyConfigData)) {
 	beforeModifyConfig = cb
 }
 
@@ -1136,12 +1136,12 @@ func get_system_config(ctx *XHttpContent) {
 }
 
 func modify_system_config(ctx *XHttpContent) {
-	reqdata := ModifyConfigData{}
+	reqdata := AdminModifyConfigData{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
 	if beforeModifyConfig != nil {
-		reqdata = beforeModifyConfig(reqdata)
+		beforeModifyConfig(&reqdata)
 	}
 	for i := 0; i < len(reqdata.Config); i++ {
 		sql := "update x_config set ConfigValue = ? where SellerId = ? and ChannelId = ? and ConfigName = ?"
