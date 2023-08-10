@@ -1017,3 +1017,10 @@ func (this *XRedis) Append(key string, value interface{}) error {
 	}
 	return nil
 }
+
+func (this *XRedis) Do(commond string, key string, values ...interface{}) (interface{}, error) {
+	conn := this.redispool.Get()
+	defer conn.Close()
+	ret, err := conn.Do(commond, key, values)
+	return ret, err
+}
