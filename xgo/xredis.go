@@ -491,8 +491,11 @@ func (this *XRedis) BLPop(key string, timeout int) ([]byte, error) {
 		logs.Error(err.Error())
 		return nil, err
 	}
-	arr := ret.([]interface{})
-	return arr[1].([]byte), nil
+	if ret != nil {
+		arr := ret.([]interface{})
+		return arr[1].([]byte), nil
+	}
+	return nil, errors.New("失败")
 }
 
 func (this *XRedis) BRPop(key string, timeout int) ([]byte, error) {
