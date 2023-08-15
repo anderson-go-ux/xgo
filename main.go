@@ -36,7 +36,6 @@ var fullatuh = `
 `
 
 func main() {
-	defer xgo.Run()
 	xgo.Init()
 	db.Init("server.db")
 	redis.Init("server.redis")
@@ -44,4 +43,5 @@ func main() {
 	http.InitWs("/api/ws")
 	xgo.AdminInit(http, db, redis, fullatuh)
 	xgo.BackupDb(db, "db.sql")
+	xgo.Run()
 }

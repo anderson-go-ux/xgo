@@ -1,6 +1,8 @@
 package xgo
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1023,4 +1025,57 @@ func (this *XRedis) Do(commond string, args ...interface{}) (interface{}, error)
 	defer conn.Close()
 	ret, err := conn.Do(commond, args)
 	return ret, err
+}
+
+func (this *XRedis) LoadScript(name string, script string) error {
+	conn := this.redispool.Get()
+	defer conn.Close()
+	hasher := sha1.New()
+	hasher.Write([]byte(script))
+	hashHex := hex.EncodeToString(hasher.Sum(nil))
+	key := fmt.Sprintf("%v:__redis_script:%v", project, name)
+	ret, err := conn.Do("script", "exists", hashHex)
+	if err != nil {
+		return err
+	}
+	retarr := ret.([]interface{})
+	if retarr[0].(int64) == 1 {
+		_, err = conn.Do("set", key, hashHex)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	ret, err = conn.Do("script", "load", script)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Do("set", key, hashHex)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (this *XRedis) EvalScript(name string, args ...interface{}) (interface{}, error) {
+	conn := this.redispool.Get()
+	defer conn.Close()
+	key := fmt.Sprintf("%v:__redis_script:%v", project, name)
+	ret, err := conn.Do("get", key)
+	if err != nil {
+		return nil, err
+	}
+	if ret == nil {
+		return nil, errors.New(fmt.Sprintf("获取脚本哈希失败:%v", name))
+	}
+	scripthash := string(ret.([]byte))
+	params := []interface{}{}
+	params = append(params, scripthash)
+	params = append(params, len(args))
+	params = append(params, args...)
+	ret, err = conn.Do("evalsha", params...)
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
