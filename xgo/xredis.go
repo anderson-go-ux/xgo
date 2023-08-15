@@ -1057,7 +1057,7 @@ func (this *XRedis) LoadScript(name string, script string) error {
 	return nil
 }
 
-func (this *XRedis) EvalScript(name string, args ...interface{}) (interface{}, error) {
+func (this *XRedis) ScriptEval(name string, args ...interface{}) (interface{}, error) {
 	conn := this.redispool.Get()
 	defer conn.Close()
 	key := fmt.Sprintf("%v:__redis_script:%v", project, name)
