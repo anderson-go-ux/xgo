@@ -8,18 +8,6 @@ var db *xgo.XDb = &xgo.XDb{}
 var redis *xgo.XRedis = &xgo.XRedis{}
 var http *xgo.XHttp = &xgo.XHttp{}
 
-type XConfig struct {
-	Id          int    `gorm:"column:Id"`
-	SellerId    int    `gorm:"column:SellerId"`
-	ChannelId   int    `gorm:"column:ChannelId"`
-	ConfigName  string `gorm:"column:ConfigName"`
-	ConfigValue string `gorm:"column:ConfigValue"`
-	EditAble    int    `gorm:"column:EditAble"`
-	ShowAble    int    `gorm:"column:ShowAble"`
-	ForClient   int    `gorm:"column:ForClient"`
-	CreateTime  string `gorm:"column:CreateTime"`
-}
-
 var fullatuh = `
 {
 	"系统首页": { "查" : 1},
