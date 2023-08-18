@@ -640,7 +640,7 @@ func get_admin_user(ctx *XHttpContent) {
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.Where("ChannelId = ?", reqdata.ChannelId, 0)
 	table = table.Where("Account = ?", reqdata.Account, "")
-	total, _ := table.Select("select count(*) as total").GetOne()
+	total, _ := table.Count("")
 	users, _ := table.Select("*").PageData(reqdata.Page, reqdata.PageSize)
 	users.ForEach(func(xd *XDbData) bool {
 		xd.Delete("Token")
@@ -650,7 +650,7 @@ func get_admin_user(ctx *XHttpContent) {
 		return true
 	})
 	ctx.Put("data", users.GetData())
-	ctx.Put("total", total.GetInt64("total"))
+	ctx.Put("total", total)
 	ctx.RespOK()
 }
 
