@@ -2,14 +2,12 @@ package xgo
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/beego/beego/logs"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 var thisdb *XDb
@@ -36,87 +34,6 @@ type AdminTokenData struct {
 	AuthData  string
 }
 
-type XAdminRole struct {
-	Id         int    `gorm:"column:Id"`
-	SellerId   int    `gorm:"column:SellerId"`
-	RoleName   string `gorm:"column:RoleName"`
-	Parent     string `gorm:"column:Parent"`
-	RoleData   string `gorm:"column:RoleData"`
-	State      int    `gorm:"column:State"`
-	Memo       string `gorm:"column:Memo"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type XAdminUser struct {
-	Id          int    `gorm:"column:Id"`
-	SellerId    int    `gorm:"column:SellerId"`
-	ChannelId   int    `gorm:"column:ChannelId"`
-	Account     string `gorm:"column:Account"`
-	Password    string `gorm:"column:Password"`
-	RoleName    string `gorm:"column:RoleName"`
-	LoginGoogle string `gorm:"column:LoginGoogle"`
-	OptGoogle   string `gorm:"column:OptGoogle"`
-	State       int    `gorm:"column:State"`
-	Token       string `gorm:"column:Token"`
-	LoginCount  int    `gorm:"column:LoginCount"`
-	LoginTime   string `gorm:"column:LoginTime"`
-	LoginIp     string `gorm:"column:LoginIp"`
-	Memo        string `gorm:"column:Memo"`
-	CreateTime  string `gorm:"column:CreateTime"`
-}
-
-type XAdminLoginLog struct {
-	Id         int    `gorm:"column:Id"`
-	SellerId   int    `gorm:"column:SellerId"`
-	ChannelId  int    `gorm:"column:ChannelId"`
-	Account    string `gorm:"column:Account"`
-	Token      string `gorm:"column:Token"`
-	LoginIp    string `gorm:"column:LoginIp"`
-	Memo       string `gorm:"column:Memo"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type XAdminOptLog struct {
-	Id         int    `gorm:"column:Id"`
-	SellerId   int    `gorm:"column:SellerId"`
-	ChannelId  int    `gorm:"column:ChannelId"`
-	Account    string `gorm:"column:Account"`
-	ReqPath    string `gorm:"column:ReqPath"`
-	ReqData    string `gorm:"column:ReqData"`
-	Ip         string `gorm:"column:Ip"`
-	Memo       string `gorm:"column:Memo"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type XSeller struct {
-	Id         int    `gorm:"column:Id"`
-	SellerId   int    `gorm:"column:SellerId"`
-	State      int    `gorm:"column:State"`
-	SellerName string `gorm:"column:SellerName"`
-	Memo       string `gorm:"column:Memo"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type XChannel struct {
-	Id          int    `gorm:"column:Id"`
-	SellerId    int    `gorm:"column:SellerId"`
-	ChannelId   int    `gorm:"column:ChannelId"`
-	State       int    `gorm:"column:State"`
-	ChannelName string `gorm:"column:ChannelName"`
-	Memo        string `gorm:"column:Memo"`
-	CreateTime  string `gorm:"column:CreateTime"`
-}
-
-type XConfig struct {
-	Id          int    `gorm:"column:Id"`
-	SellerId    int    `gorm:"column:SellerId"`
-	ChannelId   int    `gorm:"column:ChannelId"`
-	ConfigName  string `gorm:"column:ConfigName"`
-	ConfigValue string `gorm:"column:ConfigValue"`
-	ForClient   int    `gorm:"column:ForClient"`
-	CreateTime  string `gorm:"column:CreateTime"`
-}
-
 func AdminBeforeModifyConfig(cb func(*AdminModifyConfigData)) {
 	beforeModifyConfig = cb
 }
@@ -130,21 +47,22 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 	thisdb = db
 	thisredis = redis
 	if env != "dev" {
-		var count int
-		db.Gorm().Table("x_seller").Count(&count)
+		data, _ := db.Table("x_seller").Select("count(*) as count").GetOne()
+		count := data.GetInt("count")
 		if count == 0 {
-			seller := XSeller{}
-			seller.SellerId = 1
-			seller.SellerName = "初始运营商"
-			db.Gorm().Table("x_seller").Create(&seller)
+			db.Table("x_seller").Insert(H{
+				"SellerId":   1,
+				"SellerName": "初始运营商",
+			})
 		}
-		db.Gorm().Table("x_channel").Count(&count)
+		data, _ = db.Table("x_channel").Select("count(*) as count").GetOne()
+		count = data.GetInt("count")
 		if count == 0 {
-			channel := XChannel{}
-			channel.SellerId = 1
-			channel.ChannelId = 1
-			channel.ChannelName = "初始渠道"
-			db.Gorm().Table("x_channel").Create(&channel)
+			db.Table("x_channel").Insert(H{
+				"SellerId":    1,
+				"ChannelId":   1,
+				"ChannelName": "初始渠道",
+			})
 		}
 		auth_init(db, fullauth)
 	}
@@ -162,11 +80,6 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 	http.OnPostWithAuth("/sapi/get_channel_names", get_channel_names, "", false, "")
 	http.OnPostWithAuth("/sapi/get_role_names", get_role_names, "", false, "")
 	http.OnPostWithAuth("/sapi/get_role_data", get_role_data, "", false, "")
-
-	// http.OnPostWithAuth("/sapi/get_seller", get_seller, "系统管理.运营商管理.查", false, "")
-	// http.OnPostWithAuth("/sapi/add_seller", add_seller, "系统管理.运营商管理.增", true, "添加运营商")
-	// http.OnPostWithAuth("/sapi/modify_seller", modify_seller, "系统管理.运营商管理.改", true, "修改运营商")
-	// http.OnPostWithAuth("/sapi/delete_seller", delete_seller, "系统管理.运营商管理.删", true, "删除运营商")
 
 	http.OnPostWithAuth("/sapi/get_channel", get_channel, "系统管理.渠道管理.查", false, "")
 	http.OnPostWithAuth("/sapi/add_channel", add_channel, "系统管理.渠道管理.增", true, "添加渠道")
@@ -211,60 +124,60 @@ func auth_init(db *XDb, fullauth string) {
 	}
 	jbytes, _ := json.Marshal(&jdata)
 	authstr := string(jbytes)
-	sellers := []XSeller{}
-	thisdb.Gorm().Table("x_seller").Find(&sellers)
-	for i := 0; i < len(sellers); i++ {
-		role := XAdminRole{}
-		err := thisdb.Gorm().Table("x_admin_role").Where("SellerId = ? and RoleName = '运营商超管'", sellers[i].SellerId).First(&role).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			role.SellerId = sellers[i].SellerId
-			role.Parent = "god"
-			role.RoleName = "运营商超管"
-			role.RoleData = authstr
-			thisdb.Gorm().Table("x_admin_role").Create(&role)
+	sellers, err := thisdb.Table("x_seller").GetList()
+	sellers.ForEach(func(xd *XDbData) bool {
+		SellerId := xd.GetInt("SellerId")
+		_, err := thisdb.Table("x_admin_role").Where("SellerId = ? and RoleName = '运营商超管'", SellerId, nil).GetOne()
+		if err != nil && err.Error() == DB_ERROR_NORECORD {
+			thisdb.Table("x_admin_role").Insert(H{
+				"SellerId": SellerId,
+				"Parent":   "god",
+				"RoleName": "运营商超管",
+				"RoleData": authstr,
+			})
 		}
-		user := XAdminUser{}
-		err = thisdb.Gorm().Table("x_admin_user").Where("SellerId = ?", sellers[i].SellerId).First(&user).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			user.SellerId = sellers[i].SellerId
-			user.Account = fmt.Sprintf("admin%v", user.SellerId)
-			user.Password = Md5(Md5("admin"))
-			user.RoleName = "运营商超管"
-			thisdb.Gorm().Table("x_admin_user").Create(&user)
+		_, err = thisdb.Table("x_admin_user").Where("SellerId = ?", SellerId, nil).GetOne()
+		if err != nil && err.Error() == DB_ERROR_NORECORD {
+			thisdb.Table("x_admin_user").Insert(H{
+				"SellerId": SellerId,
+				"Account":  fmt.Sprintf("admin%v", SellerId),
+				"Password": Md5(Md5("admin")),
+				"RoleName": "运营商超管",
+			})
 
 		}
-	}
+		return true
+	})
 	sql := "update x_admin_role set RoleData = ? where RoleName = ?"
 	db.conn().Exec(sql, authstr, "运营商超管")
-
-	super := XAdminRole{}
-	err := thisdb.Gorm().Table("x_admin_role").Where("SellerId = -1 and RoleName = '超级管理员'").First(&super).Error
-	if super.RoleData != fullauth {
-		roles := []XAdminRole{}
-		thisdb.Gorm().Table("x_admin_role").Find(&roles)
-		for i := 0; i < len(roles); i++ {
-			if roles[i].RoleName == "超级管理员" {
-				continue
+	super, err := thisdb.Table("x_admin_role").Where("SellerId = ? and RoleName = '超级管理员'", -1, nil).GetOne()
+	if super.GetString("RoleData") != fullauth {
+		roles, _ := thisdb.Table("x_admin_role").GetList()
+		roles.ForEach(func(xd *XDbData) bool {
+			if xd.GetString("RoleName") == "超级管理员" {
+				return true
 			}
 			jnewdata := make(map[string]interface{})
 			json.Unmarshal([]byte(fullauth), &jnewdata)
 			clean_auth(jnewdata)
 			jrdata := make(map[string]interface{})
-			json.Unmarshal([]byte(roles[i].RoleData), &jrdata)
+			json.Unmarshal([]byte(xd.GetString("RoleData")), &jrdata)
 			for k, v := range jrdata {
 				set_auth(k, jnewdata, v.(map[string]interface{}))
 			}
 			newauthbyte, _ := json.Marshal(&jnewdata)
 			sql = "update x_admin_role set RoleData = ? where id = ?"
-			thisdb.Exec(sql, string(newauthbyte), roles[i].Id)
-		}
+			thisdb.Exec(sql, string(newauthbyte), xd.GetInt("Id"))
+			return true
+		})
 	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		super.SellerId = -1
-		super.RoleName = "超级管理员"
-		super.Parent = "god"
-		super.RoleData = fullauth
-		thisdb.Gorm().Table("x_admin_role").Create(&super)
+	if err != nil && err.Error() == DB_ERROR_NORECORD {
+		thisdb.Table("x_admin_role").Insert(H{
+			"SellerId": -1,
+			"RoleName": "超级管理员",
+			"Parent":   "god",
+			"RoleData": fullauth,
+		})
 	} else {
 		sql = "update x_admin_role set RoleData = ? where RoleName = ?"
 		thisdb.Exec(sql, fullauth, "超级管理员")
@@ -337,8 +250,7 @@ func user_login(ctx *XHttpContent) {
 		ctx.RespErr("操作频繁,请稍后再试")
 		return
 	}
-	user := XAdminUser{}
-	err := thisdb.Gorm().Table("x_admin_user").Where("Account = ?", reqdata.Account).First(&user).Error
+	user, err := thisdb.Table("x_admin_user").Where("Account = ?", reqdata.Account, nil).GetOne()
 	if err != nil {
 		if err.Error() == "record not found" {
 			ctx.RespErr("账号不存在")
@@ -348,22 +260,22 @@ func user_login(ctx *XHttpContent) {
 		}
 		return
 	}
-	if user.State != 1 {
+	if user.GetInt("State") != 1 {
 		ctx.RespErr("账号已禁用")
 		return
 	}
-	if strings.Index(env, "prd") >= 0 && user.LoginGoogle != "" && !VerifyGoogleCode(user.LoginGoogle, reqdata.GoogleCode) {
+	if strings.Index(env, "prd") >= 0 && user.GetString("LoginGoogle") != "" && !VerifyGoogleCode(user.GetString("LoginGoogle"), reqdata.GoogleCode) {
 		ctx.RespErr("验证码错误")
 		return
 	}
-	if user.Password != reqdata.Password {
+	if user.GetString("Password") != reqdata.Password {
 		ctx.RespErr("密码不正确")
 		return
 	}
-	seller := XSeller{}
-	err = thisdb.Gorm().Table("x_seller").Where("SellerId = ?", user.SellerId).First(&seller).Error
+
+	seller, err := thisdb.Table("x_seller").Where("SellerId = ?", user.GetString("SellerId"), nil).GetOne()
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err.Error() == DB_ERROR_NORECORD {
 			ctx.RespErr("运营商不存在")
 		} else {
 			logs.Error("user_login:", err)
@@ -371,59 +283,59 @@ func user_login(ctx *XHttpContent) {
 		}
 		return
 	}
-	if seller.State != 1 {
+	if seller.GetInt("State") != 1 {
 		ctx.RespErr("运营商已禁用")
 		return
 	}
-	role := XAdminRole{}
-	err = thisdb.Gorm().Table("x_admin_role").Where("SellerId = ? and RoleName = ?", user.SellerId, user.RoleName).First(&role).Error
+	role, err := thisdb.Table("x_admin_role").Where("SellerId = ?", user.GetInt("SellerId"), nil).
+		Where("RoleName = ?", user.GetString("RoleName"), nil).GetOne()
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err.Error() == DB_ERROR_NORECORD {
 			ctx.RespErr("角色不存在")
 		} else {
 			logs.Error("user_login:", err)
 			ctx.RespErr("登录失败,请稍后再试")
 		}
 	}
-	if role.State != 1 {
+	if role.GetInt("State") != 1 {
 		ctx.RespErr("角色已禁用")
 		return
 	}
 
-	if len(user.Token) > 0 {
-		thishttp.DelToken(user.Token)
+	if len(user.GetString("Token")) > 0 {
+		thishttp.DelToken(user.GetString("Token"))
 	}
-	if user.ChannelId != 0 {
+	if user.GetInt("ChannelId") != 0 {
 		ctx.RespErr("该账号为渠道账号,不可登录运营后台")
 		return
 	}
 	token := uuid.New().String()
 	tokendata := AdminTokenData{}
 	tokendata.Account = reqdata.Account
-	tokendata.SellerId = user.SellerId
-	tokendata.ChannelId = user.ChannelId
-	tokendata.AuthData = role.RoleData
+	tokendata.SellerId = user.GetInt("SellerId")
+	tokendata.ChannelId = user.GetInt("ChannelId")
+	tokendata.AuthData = role.GetString("RoleData")
 	thishttp.SetToken(token, tokendata)
 	sql := "update x_admin_user set Token = ?,LoginCount = LoginCount + 1,LoginTime = now(),LoginIp = ? where id = ?"
-	thisdb.Exec(sql, token, ctx.GetIp(), user.Id)
-	log := XAdminLoginLog{}
-	log.SellerId = user.SellerId
-	log.ChannelId = user.ChannelId
-	log.Account = reqdata.Account
-	log.Token = token
-	log.LoginIp = ctx.GetIp()
-	log.CreateTime = GetLocalTime()
-	thisdb.Gorm().Table("x_admin_login_log").Create(&log)
+	thisdb.Exec(sql, token, ctx.GetIp(), user.GetInt("Id"))
+	thisdb.Table("x_admin_login_log").Insert(H{
+		"SellerId":   tokendata.SellerId,
+		"ChannelId":  tokendata.ChannelId,
+		"Account":    reqdata.Account,
+		"Token":      token,
+		"LoginIp":    ctx.GetIp(),
+		"CreateTime": GetLocalTime(),
+	})
 	jauth := make(map[string]interface{})
 	json.Unmarshal([]byte(tokendata.AuthData), &jauth)
-	ctx.Put("UserId", user.Id)
-	ctx.Put("SellerId", user.SellerId)
-	ctx.Put("ChannelId", user.ChannelId)
+	ctx.Put("UserId", user.GetInt("Id"))
+	ctx.Put("SellerId", user.GetInt("SellerId"))
+	ctx.Put("ChannelId", user.GetInt("ChannelId"))
 	ctx.Put("Account", reqdata.Account)
 	ctx.Put("Token", token)
-	ctx.Put("LoginTime", user.LoginTime)
+	ctx.Put("LoginTime", user.GetString("LoginTime"))
 	ctx.Put("Ip", ctx.GetIp())
-	ctx.Put("LoginCount", user.LoginCount)
+	ctx.Put("LoginCount", user.GetInt("LoginCount"))
 	ctx.Put("AuthData", jauth)
 	ctx.RespOK()
 }
@@ -443,16 +355,8 @@ func user_logout(ctx *XHttpContent) {
 }
 
 func get_seller_names(ctx *XHttpContent) {
-	seller := []XSeller{}
-	db := thisdb.Gorm()
-	db = db.Table("x_seller")
-	db = db.Select("SellerId,SellerName")
-	db.Find(&seller)
-	sellers := []map[string]interface{}{}
-	for i := 0; i < len(seller); i++ {
-		sellers = append(sellers, H{"SellerId": seller[i].SellerId, "SellerName": seller[i].SellerName})
-	}
-	ctx.Put("data", sellers)
+	sellers, _ := thisdb.Table("x_seller").Select("SellerId,SellerName").GetList()
+	ctx.Put("data", sellers.GetData())
 	ctx.RespOK()
 }
 
@@ -464,17 +368,12 @@ func get_channel_names(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	channel := []XChannel{}
-	db := thisdb.Gorm()
-	db = db.Table("x_channel")
-	db = db.Where("SellerId = ?", reqdata.SellerId)
-	db = db.Select("ChannelId,ChannelName")
-	db.Find(&channel)
-	channels := []map[string]interface{}{}
-	for i := 0; i < len(channel); i++ {
-		channels = append(channels, H{"ChannelId": channel[i].ChannelId, "ChannelName": channel[i].ChannelName})
-	}
-	ctx.Put("data", channels)
+	table := thisdb.Table("x_channel")
+	table = table.Select("ChannelId,ChannelName")
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+	table = table.OrderBy("ChannelId asc")
+	channels, _ := table.GetList()
+	ctx.Put("data", channels.GetData())
 	ctx.RespOK()
 }
 
@@ -486,17 +385,11 @@ func get_role_names(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	role := []XAdminRole{}
-	db := thisdb.Gorm()
-	db = db.Table("x_admin_role")
-	db = db.Where("SellerId = ?", reqdata.SellerId)
-	db = db.Select("RoleName")
-	db.Find(&role)
-	roles := []string{}
-	for i := 0; i < len(role); i++ {
-		roles = append(roles, role[i].RoleName)
-	}
-	ctx.Put("data", role)
+	table := thisdb.Table("x_admin_role")
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+	table = table.Select("RoleName")
+	roles, _ := table.GetList()
+	ctx.Put("data", roles.GetData())
 	ctx.RespOK()
 }
 
@@ -510,128 +403,27 @@ func get_role_data(ctx *XHttpContent) {
 		return
 	}
 	{
-		role := XAdminRole{}
-		db := thisdb.Gorm()
-		db = db.Table("x_admin_role")
-		db = db.Where("SellerId = ?", reqdata.SellerId)
-		db = db.Where("RoleName = ?", reqdata.RoleName)
-		db = db.Select("RoleData")
-		db.First(&role)
-		ctx.Put("RoleData", role.RoleData)
+		table := thisdb.Table("x_admin_role")
+		table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+		table = table.Where("RoleName = ?", reqdata.RoleName, nil)
+		table = table.Select("RoleData")
+		role, _ := table.GetOne()
+		if role != nil {
+			ctx.Put("RoleData", role.GetString("RoleData"))
+		}
 	}
 	{
-		role := XAdminRole{}
-		db := thisdb.Gorm()
-		db = db.Table("x_admin_role")
-		db = db.Where("SellerId = ?", reqdata.SellerId)
-		db = db.Where("RoleName = ?", "运营商超管")
-		db = db.Select("RoleData")
-		db.First(&role)
-		ctx.Put("SuperRoleData", role.RoleData)
+		table := thisdb.Table("x_admin_role")
+		table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+		table = table.Where("RoleName = ?", "运营商超管", nil)
+		table = table.Select("RoleData")
+		role, _ := table.GetOne()
+		if role != nil {
+			ctx.Put("SuperRoleData", role.GetString("RoleData"))
+		}
 	}
 	ctx.RespOK()
 }
-
-// func get_seller(ctx *XHttpContent) {
-// 	type RequestData struct {
-// 		Page       int
-// 		PageSize   int
-// 		SellerId   int
-// 		SellerName string
-// 	}
-// 	reqdata := RequestData{}
-// 	if ctx.RequestData(&reqdata) != nil {
-// 		return
-// 	}
-// 	if reqdata.Page <= 0 {
-// 		reqdata.Page = 1
-// 	}
-// 	if reqdata.PageSize <= 0 || reqdata.PageSize > 2000 {
-// 		reqdata.PageSize = 15
-// 	}
-// 	seller := []XSeller{}
-// 	offset := (reqdata.Page - 1) * reqdata.PageSize
-// 	db := thisdb.Gorm()
-// 	db = thisdb.Where(db, "SellerId = ?", reqdata.SellerId, int(0))
-// 	db = thisdb.Where(db, "SellerName = ?", reqdata.SellerName, "")
-// 	db.Offset(offset).Limit(reqdata.PageSize).Find(&seller)
-// 	for i := 0; i < len(seller); i++ {
-// 		seller[i].CreateTime = LocalTimeToUtc(seller[i].CreateTime)
-// 	}
-// 	ctx.RespOK(seller)
-// }
-
-// func add_seller(ctx *XHttpContent) {
-// 	type RequestData struct {
-// 		SellerId   int    `validate:"required" gorm:"column:SellerId"`
-// 		SellerName string `validate:"required" gorm:"column:SellerName"`
-// 	}
-// 	reqdata := RequestData{}
-// 	if ctx.RequestData(&reqdata) != nil {
-// 		return
-// 	}
-// 	db := thisdb.Gorm()
-// 	db = db.Table("x_seller")
-// 	err := db.Create(&reqdata).Error
-// 	if err != nil {
-// 		logs.Error(err)
-// 		ctx.Put("error", err.Error())
-// 		ctx.RespErr("添加失败")
-// 		return
-// 	}
-// 	ctx.RespOK()
-// }
-
-// func modify_seller(ctx *XHttpContent) {
-// 	type RequestData struct {
-// 		SellerId   int    `validate:"required"`
-// 		SellerName string `validate:"required"`
-// 		State      int    `validate:"required"`
-// 	}
-// 	reqdata := RequestData{}
-// 	if ctx.RequestData(&reqdata) != nil {
-// 		return
-// 	}
-// 	db := thisdb.Gorm()
-// 	db = db.Where("SellerId = ?", reqdata.SellerId)
-// 	updatedata := *ObjectToMap(&reqdata)
-// 	delete(updatedata, "SellerId")
-// 	if reqdata.SellerName == "" {
-// 		delete(updatedata, "SellerName")
-// 	}
-// 	if reqdata.State == 0 {
-// 		delete(updatedata, "State")
-// 	}
-// 	err := db.Update(updatedata).Error
-// 	if err != nil {
-// 		logs.Error(err)
-// 		ctx.Put("error", err.Error())
-// 		ctx.RespErr("修改失败")
-// 		return
-// 	}
-// 	ctx.RespOK()
-// }
-
-// func delete_seller(ctx *XHttpContent) {
-// 	type RequestData struct {
-// 		SellerId int `validate:"required"`
-// 	}
-// 	reqdata := RequestData{}
-// 	if ctx.RequestData(&reqdata) != nil {
-// 		return
-// 	}
-// 	db := thisdb.Gorm()
-// 	db = db.Table("x_seller")
-// 	db = db.Where("SellerId = ?", reqdata.SellerId)
-// 	err := db.Delete(&reqdata).Error
-// 	if err != nil {
-// 		logs.Error(err)
-// 		ctx.Put("error", err.Error())
-// 		ctx.RespErr("删除失败")
-// 		return
-// 	}
-// 	ctx.RespOK()
-// }
 
 func get_channel(ctx *XHttpContent) {
 	type RequestData struct {
@@ -651,20 +443,13 @@ func get_channel(ctx *XHttpContent) {
 	if reqdata.PageSize <= 0 || reqdata.PageSize > 2000 {
 		reqdata.PageSize = 15
 	}
-	offset := (reqdata.Page - 1) * reqdata.PageSize
-	channel := []XChannel{}
-	db := thisdb.Gorm()
-	db = db.Table("x_channel").Order("id desc")
-	db = thisdb.Where(db, "SellerId = ?", reqdata.SellerId, int(0))
-	db = thisdb.Where(db, "ChannelId = ?", reqdata.ChannelId, int(0))
-	db = thisdb.Where(db, "ChannelName = ?", reqdata.ChannelName, "")
-	var total int
-	db.Count(&total)
-	db.Offset(offset).Limit(reqdata.PageSize).Find(&channel)
-	for i := 0; i < len(channel); i++ {
-		channel[i].CreateTime = LocalTimeToUtc(channel[i].CreateTime)
-	}
-	ctx.Put("data", channel)
+	table := thisdb.Table("x_channel").OrderBy("id desc")
+	table = table.Where("SellerId = ?", reqdata.SellerId, 0)
+	table = table.Where("ChannelId = ?", reqdata.ChannelId, 0)
+	table = table.Where("ChannelName = ?", reqdata.ChannelName, "")
+	total, _ := table.Count("")
+	channels, _ := table.GetList()
+	ctx.Put("data", channels.GetData())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
@@ -680,9 +465,8 @@ func add_channel(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	db := thisdb.Gorm()
-	db = db.Table("x_channel")
-	err := db.Create(&reqdata).Error
+	table := thisdb.Table("x_channel")
+	_, err := table.Insert(reqdata)
 	if err != nil {
 		logs.Error(err)
 		ctx.Put("error", err.Error())
@@ -707,14 +491,10 @@ func modify_channel(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	db := thisdb.Gorm()
-	db = db.Table("x_channel")
-	db = db.Where("SellerId = ?", reqdata.SellerId)
-	db = db.Where("ChannelId = ?", reqdata.ChannelId)
-	updatedata := *ObjectToMap(&reqdata)
-	delete(updatedata, "SellerId")
-	delete(updatedata, "ChannelId")
-	err := db.Update(updatedata).Error
+	table := thisdb.Table("x_channel")
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+	table = table.Where("ChannelId = ?", reqdata.ChannelId, nil)
+	_, err := table.Update(reqdata)
 	if err != nil {
 		logs.Error(err)
 		ctx.Put("error", err.Error())
@@ -733,11 +513,10 @@ func delete_channel(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	db := thisdb.Gorm()
-	db = db.Table("x_channel")
-	db = db.Where("SellerId = ?", reqdata.SellerId)
-	db = db.Where("ChannelId = ?", reqdata.ChannelId)
-	err := db.Delete(&reqdata).Error
+	table := thisdb.Table("x_channel")
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+	table = table.Where("ChannelId = ?", reqdata.ChannelId, nil)
+	_, err := table.Delete()
 	if err != nil {
 		logs.Error(err)
 		ctx.Put("error", err.Error())
@@ -758,44 +537,30 @@ func get_role(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	if reqdata.Page <= 0 {
-		reqdata.Page = 1
-	}
-	if reqdata.PageSize <= 0 || reqdata.PageSize > 2000 {
-		reqdata.PageSize = 15
-	}
-	offset := (reqdata.Page - 1) * reqdata.PageSize
-	role := []XAdminRole{}
-	db := thisdb.Gorm()
-	db = db.Table("x_admin_role").Order("id desc")
-	db = thisdb.Where(db, "SellerId = ?", reqdata.SellerId, int(0))
-	db = thisdb.Where(db, "RoleName = ?", reqdata.RoleName, "")
-	var total int
-	db.Count(&total)
-	db.Offset(offset).Limit(reqdata.PageSize).Find(&role)
-	for i := 0; i < len(role); i++ {
-		role[i].CreateTime = LocalTimeToUtc(role[i].CreateTime)
-	}
-	ctx.Put("data", role)
+	table := thisdb.Table("x_admin_role").OrderBy("id desc")
+	table = table.Where("SellerId = ?", reqdata.SellerId, 0)
+	table = table.Where("RoleName = ?", reqdata.RoleName, "")
+	total, _ := table.Count("")
+	roles, _ := table.PageData(reqdata.Page, reqdata.PageSize)
+	ctx.Put("data", roles.GetData())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
 
 func add_role(ctx *XHttpContent) {
 	type RequestData struct {
-		SellerId int    `validate:"required" gorm:"column:SellerId"`
-		RoleName string `validate:"required" gorm:"column:RoleName"`
-		Parent   string `validate:"required" gorm:"column:Parent"`
-		RoleData string `validate:"required" gorm:"column:RoleData"`
-		Memo     string `gorm:"column:Memo"`
+		SellerId int    `validate:"required"`
+		RoleName string `validate:"required"`
+		Parent   string `validate:"required"`
+		RoleData string `validate:"required"`
+		Memo     string
 	}
 	reqdata := RequestData{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	db := thisdb.Gorm()
-	db = db.Table("x_admin_role")
-	err := db.Create(&reqdata).Error
+	db := thisdb.Table("x_admin_role")
+	_, err := db.Insert(reqdata)
 	if err != nil {
 		logs.Error(err)
 		ctx.Put("error", err.Error())
@@ -818,14 +583,10 @@ func modify_role(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	db := thisdb.Gorm()
-	db = db.Table("x_admin_role")
-	db = db.Where("SellerId = ?", reqdata.SellerId)
-	db = db.Where("RoleName = ?", reqdata.RoleName)
-	updatedata := *ObjectToMap(&reqdata)
-	delete(updatedata, "SellerId")
-	delete(updatedata, "RoleName")
-	err := db.Update(updatedata).Error
+	table := thisdb.Table("x_admin_role")
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+	table = table.Where("RoleName = ?", reqdata.RoleName, nil)
+	_, err := table.Update(reqdata)
 	if err != nil {
 		logs.Error(err)
 		ctx.Put("error", err.Error())
@@ -844,11 +605,10 @@ func delete_role(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	db := thisdb.Gorm()
-	db = db.Table("x_admin_role")
-	db = db.Where("SellerId = ?", reqdata.SellerId)
-	db = db.Where("RoleName = ?", reqdata.RoleName)
-	err := db.Delete(&reqdata).Error
+	table := thisdb.Table("x_admin_role")
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+	table = table.Where("RoleName = ?", reqdata.RoleName, nil)
+	_, err := table.Delete()
 	if err != nil {
 		logs.Error(err)
 		ctx.Put("error", err.Error())
@@ -876,45 +636,40 @@ func get_admin_user(ctx *XHttpContent) {
 	if reqdata.PageSize <= 0 || reqdata.PageSize > 2000 {
 		reqdata.PageSize = 15
 	}
-	offset := (reqdata.Page - 1) * reqdata.PageSize
-	user := []XAdminUser{}
-	db := thisdb.Gorm()
-	db = db.Table("x_admin_User").Order("id desc")
-	db = thisdb.Where(db, "SellerId = ?", reqdata.SellerId, nil)
-	db = thisdb.Where(db, "ChannelId = ?", reqdata.ChannelId, int(0))
-	db = thisdb.Where(db, "Account = ?", reqdata.Account, "")
-	var total int
-	db.Count(&total)
-	db.Offset(offset).Limit(reqdata.PageSize).Find(&user)
-	for i := 0; i < len(user); i++ {
-		user[i].CreateTime = LocalTimeToUtc(user[i].CreateTime)
-		user[i].Token = ""
-		user[i].Password = ""
-		user[i].LoginGoogle = ""
-		user[i].OptGoogle = ""
-	}
-	ctx.Put("data", user)
-	ctx.Put("total", total)
+	table := thisdb.Table("x_admin_User")
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+	table = table.Where("ChannelId = ?", reqdata.ChannelId, 0)
+	table = table.Where("Account = ?", reqdata.Account, "")
+	total, _ := table.Select("select count(*) as total").GetOne()
+	users, _ := table.Select("*").PageData(reqdata.Page, reqdata.PageSize)
+	users.ForEach(func(xd *XDbData) bool {
+		xd.Delete("Token")
+		xd.Delete("Password")
+		xd.Delete("LoginGoogle")
+		xd.Delete("OptGoogle")
+		return true
+	})
+	ctx.Put("data", users.GetData())
+	ctx.Put("total", total.GetInt64("total"))
 	ctx.RespOK()
 }
 
 func add_admin_user(ctx *XHttpContent) {
 	type RequestData struct {
-		SellerId  int    `validate:"required" gorm:"column:SellerId"`
-		ChannelId int    `gorm:"column:ChannelId"`
-		Account   string `validate:"required" gorm:"column:Account"`
-		Password  string `validate:"required" gorm:"column:Password"`
-		RoleName  string `validate:"required" gorm:"column:RoleName"`
-		Memo      string `gorm:"column:Memo"`
+		SellerId  int `validate:"required"`
+		ChannelId int
+		Account   string `validate:"required"`
+		Password  string `validate:"required"`
+		RoleName  string `validate:"required"`
+		Memo      string
 	}
 	reqdata := RequestData{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
 	reqdata.Password = Md5(reqdata.Password)
-	db := thisdb.Gorm()
-	db = db.Table("x_admin_user")
-	err := db.Create(&reqdata).Error
+	db := thisdb.Table("x_admin_user")
+	_, err := db.Insert(reqdata)
 	if err != nil {
 		logs.Error(err)
 		ctx.Put("error", err.Error())
@@ -939,17 +694,10 @@ func modify_admin_user(ctx *XHttpContent) {
 	if reqdata.Password != "" {
 		reqdata.Password = Md5(reqdata.Password)
 	}
-	db := thisdb.Gorm()
-	db = db.Table("x_admin_user")
-	db = db.Where("SellerId = ?", reqdata.SellerId)
-	db = db.Where("Account = ?", reqdata.Account)
-	updatedata := *ObjectToMap(&reqdata)
-	delete(updatedata, "SellerId")
-	delete(updatedata, "RoleName")
-	if reqdata.Password == "" {
-		delete(updatedata, "Password")
-	}
-	err := db.Update(updatedata).Error
+	table := thisdb.Table("x_admin_user")
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+	table = table.Where("Account = ?", reqdata.Account, nil)
+	_, err := table.Update(reqdata)
 	if err != nil {
 		logs.Error(err)
 		ctx.Put("error", err.Error())
@@ -968,11 +716,10 @@ func delete_admin_user(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	db := thisdb.Gorm()
-	db = db.Table("x_admin_user")
-	db = db.Where("SellerId = ?", reqdata.SellerId)
-	db = db.Where("Account = ?", reqdata.Account)
-	err := db.Delete(&reqdata).Error
+	table := thisdb.Table("x_admin_user")
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+	table = table.Where("Account = ?", reqdata.Account, nil)
+	_, err := table.Delete()
 	if err != nil {
 		logs.Error(err)
 		ctx.Put("error", err.Error())
@@ -1001,57 +748,55 @@ func modify_admin_user_google(ctx *XHttpContent) {
 		return
 	}
 
-	user := XAdminUser{}
-	err := thisdb.Gorm().Where("SellerId = ? and Account = ?", reqdata.SellerId, reqdata.Account).Table("x_admin_user").First(&user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	user, err := thisdb.Table("x_admin_user").Where("SellerId = ?", reqdata.SellerId, nil).Where("Account = ?", reqdata.Account, nil).GetOne()
+	if err != nil && err.Error() == DB_ERROR_NORECORD {
 		ctx.RespErr("管理员不存在")
 		return
 	}
 
-	me := XAdminUser{}
-	thisdb.Gorm().Where("SellerId = ? and Account = ?", token.SellerId, token.Account).Table("x_admin_user").First(&me)
-
+	me, _ := thisdb.Table("x_admin_user").Where("SellerId = ?", token.SellerId, nil).Where("Account = ?", token.Account, nil).GetOne()
+	OptGoogle := me.GetString("OptGoogle")
+	LoginGoogle := me.GetString("LoginGoogle")
 	if reqdata.Account != token.Account {
-		if me.OptGoogle == "" {
+		if OptGoogle == "" {
 			ctx.RespErr(fmt.Sprintf("请先设置账号 %v 的操作验证码", token.Account))
 			return
 		}
-		if strings.Index(env, "prd") >= 0 && VerifyGoogleCode(me.OptGoogle, reqdata.GoogleCode) {
+		if strings.Index(env, "prd") >= 0 && VerifyGoogleCode(OptGoogle, reqdata.GoogleCode) {
 			ctx.RespErr("验证码不正确")
 			return
 		}
 	} else {
-		if reqdata.CodeType == 2 && me.LoginGoogle == "" {
-			if me.OptGoogle == "" {
-				ctx.RespErr(fmt.Sprintf("请先设置账号 %v 的登录验证码", me.Account))
+		if reqdata.CodeType == 2 && LoginGoogle == "" {
+			if OptGoogle == "" {
+				ctx.RespErr(fmt.Sprintf("请先设置账号 %v 的登录验证码", me.GetString("Account")))
 				return
 			}
 		}
-		if me.OptGoogle != "" {
-			if strings.Index(env, "prd") >= 0 && VerifyGoogleCode(me.OptGoogle, reqdata.GoogleCode) {
-				ctx.RespErr(fmt.Sprintf("验证码不正确,请输入账号 %v 的操作验证码", me.Account))
+		if OptGoogle != "" {
+			if strings.Index(env, "prd") >= 0 && VerifyGoogleCode(OptGoogle, reqdata.GoogleCode) {
+				ctx.RespErr(fmt.Sprintf("验证码不正确,请输入账号 %v 的操作验证码", me.GetString("Account")))
 				return
 			}
 		}
-		if me.LoginGoogle != "" {
-			if strings.Index(env, "prd") >= 0 && VerifyGoogleCode(me.LoginGoogle, reqdata.GoogleCode) {
-				ctx.RespErr(fmt.Sprintf("验证码不正确,请输入账号 %v 的登录 验证码", me.Account))
+		if LoginGoogle != "" {
+			if strings.Index(env, "prd") >= 0 && VerifyGoogleCode(LoginGoogle, reqdata.GoogleCode) {
+				ctx.RespErr(fmt.Sprintf("验证码不正确,请输入账号 %v 的登录 验证码", me.GetString("Account")))
 				return
 			}
 		}
 	}
-	seller := XSeller{}
-	thisdb.Gorm().Table("x_seller").Where("SellerId = ?", reqdata.SellerId).First(&seller)
+	seller, _ := thisdb.Table("x_seller").Where("SellerId = ?", reqdata.SellerId, nil).GetOne()
 	if reqdata.CodeType == 1 {
 		verifykey := NewGoogleSecret()
-		verifyurl := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=%s-登录", reqdata.Account, verifykey, seller.SellerName)
-		thisdb.Exec("update x_admin_user set LoginGoogle = ? where Id = ?", verifykey, user.Id)
+		verifyurl := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=%s-登录", reqdata.Account, verifykey, seller.GetString("SellerName"))
+		thisdb.Exec("update x_admin_user set LoginGoogle = ? where Id = ?", verifykey, user.GetInt("Id"))
 		ctx.Put("url", verifyurl)
 		ctx.RespOK()
 	} else if reqdata.CodeType == 2 {
 		verifykey := NewGoogleSecret()
-		verifyurl := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=%s-操作", reqdata.Account, verifykey, seller.SellerName)
-		thisdb.Exec("update x_admin_user set OptGoogle = ? where Id = ?", verifykey, user.Id)
+		verifyurl := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=%s-操作", reqdata.Account, verifykey, seller.GetString("SellerName"))
+		thisdb.Exec("update x_admin_user set OptGoogle = ? where Id = ?", verifykey, user.GetInt("Id"))
 		ctx.Put("url", verifyurl)
 		ctx.RespOK()
 	}
@@ -1072,35 +817,23 @@ func get_login_log(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	if reqdata.Page <= 0 {
-		reqdata.Page = 1
-	}
-	if reqdata.PageSize <= 0 {
-		reqdata.PageSize = 15
-	}
 	if reqdata.StartTime != "" {
 		reqdata.StartTime = UtcToLocalTime(reqdata.StartTime)
 	}
 	if reqdata.EndTime != "" {
 		reqdata.EndTime = UtcToLocalTime(reqdata.EndTime)
 	}
-	db := thisdb.Gorm().Table("x_admin_login_log")
-	db = db.Where("SellerId = ?", reqdata.SellerId)
-	db = thisdb.Where(db, "ChannelId = ?", reqdata.ChannelId, int(0))
-	db = thisdb.Where(db, "Account = ?", reqdata.Account, "")
-	db = thisdb.Where(db, "LoginIp = ?", reqdata.LoginIp, "")
-	db = thisdb.Where(db, "CreateTime >= ?", reqdata.StartTime, "")
-	db = thisdb.Where(db, "CreateTime < ?", reqdata.EndTime, "")
-	offset := (reqdata.Page - 1) * reqdata.PageSize
-	logs := []XAdminLoginLog{}
-	db.Offset(offset).Limit(reqdata.PageSize).Find(&logs)
-	logdata := []map[string]interface{}{}
-	for i := 0; i < len(logs); i++ {
-		mapdata := ObjectToMap(logs[i])
-		(*mapdata)["IpLocation"] = GetIpLocation(logs[i].LoginIp)
-		logdata = append(logdata, *mapdata)
-	}
-	ctx.Put("data", logdata)
+	table := thisdb.Table("x_admin_login_log")
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+	table = table.Where("ChannelId = ?", reqdata.ChannelId, 0)
+	table = table.Where("Account = ?", reqdata.Account, "")
+	table = table.Where("LoginIp = ?", reqdata.LoginIp, "")
+	table = table.Where("CreateTime >= ?", reqdata.StartTime, "")
+	table = table.Where("CreateTime < ?", reqdata.EndTime, "")
+	total, _ := table.Select("count(*) as total").GetOne()
+	logs, _ := table.Select("*").PageData(reqdata.Page, reqdata.PageSize)
+	ctx.Put("data", logs.GetData())
+	ctx.Put("total", total.GetInt64("total"))
 	ctx.RespOK()
 }
 
@@ -1117,22 +850,18 @@ func get_system_config(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	db := thisdb.Gorm().Table("x_config")
-	db = db.Where("SellerId = ?", reqdata.SellerId)
+	table := thisdb.Table("x_config")
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	if reqdata.ChannelId == 0 {
-		db = db.Where("ChannelId = ?", 0)
+		table = table.Where("ChannelId = ?", 0, nil)
 	} else {
-		db = db.Where("ChannelId = 0 or ChannelId = ?", reqdata.ChannelId)
+		table = table.Where("(ChannelId = 0 or ChannelId = ?)", reqdata.ChannelId, nil)
 	}
 	if len(reqdata.ConfigName) > 0 {
-		db = db.Where("ConfigName in (?)", reqdata.ConfigName)
+		table = table.Where("ConfigName in  ", reqdata.ConfigName, nil)
 	}
-	config := []XConfig{}
-	db.Find(&config)
-	for i := 0; i < len(config); i++ {
-		config[i].CreateTime = LocalTimeToUtc(config[i].CreateTime)
-	}
-	ctx.Put("data", config)
+	config, _ := table.GetList()
+	ctx.Put("data", config.GetData())
 	ctx.RespOK()
 }
 
