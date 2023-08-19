@@ -64,16 +64,9 @@ func (this *XDb) conn() *sql.DB {
 	return this.db.DB()
 }
 
-// func (this *XDb) Gorm() *gorm.DB {
-// 	return this.db
-// }
-
-// func (this *XDb) Where(db *gorm.DB, wherestr string, value interface{}, defaultvalue interface{}) *gorm.DB {
-// 	if value != defaultvalue {
-// 		db = db.Where(wherestr, value)
-// 	}
-// 	return db
-// }
+func (this *XDb) Begin() *gorm.DB {
+	return this.db.Begin()
+}
 
 func (this *XDb) getone(rows *sql.Rows) *map[string]interface{} {
 	data := make(map[string]interface{})
