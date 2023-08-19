@@ -243,11 +243,11 @@ func user_login(ctx *XHttpContent) {
 		Subs  []MenuData `json:"subs"`
 	}
 
-	lockkey := fmt.Sprintf("lock:admin_login:%v", reqdata.Account)
-	if !thisredis.GetLock(lockkey, 10) {
+	if !thisredis.GetLock(fmt.Sprintf("lock:admin_login:%v", reqdata.Account), 10) {
 		ctx.RespErr("操作频繁,请稍后再试")
 		return
 	}
+
 	user, err := thisdb.Table("x_admin_user").Where("Account = ?", reqdata.Account, nil).GetOne()
 	if err != nil {
 		if err.Error() == "record not found" {
@@ -740,8 +740,7 @@ func modify_admin_user_google(ctx *XHttpContent) {
 	}
 	token := GetAdminToken(ctx)
 
-	lockkey := fmt.Sprintf("lock:admin_change_google:%v", reqdata.Account)
-	if !thisredis.GetLock(lockkey, 10) {
+	if !thisredis.GetLock(fmt.Sprintf("lock:admin_change_google:%v", reqdata.Account), 10) {
 		ctx.RespErr("操作频繁,请稍后再试")
 		return
 	}
