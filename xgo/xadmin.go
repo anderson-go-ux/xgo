@@ -830,14 +830,48 @@ func get_login_log(ctx *XHttpContent) {
 	table = table.Where("LoginIp = ?", reqdata.LoginIp, "")
 	table = table.Where("CreateTime >= ?", reqdata.StartTime, "")
 	table = table.Where("CreateTime < ?", reqdata.EndTime, "")
-	total, _ := table.Select("count(*) as total").GetOne()
-	logs, _ := table.Select("*").PageData(reqdata.Page, reqdata.PageSize)
-	ctx.Put("data", logs.GetData())
-	ctx.Put("total", total.GetInt64("total"))
+	total, _ := table.Count("")
+	data, _ := table.Select("*").PageData(reqdata.Page, reqdata.PageSize)
+	ctx.Put("data", data.GetData())
+	ctx.Put("total", total)
 	ctx.RespOK()
 }
 
 func get_opt_log(ctx *XHttpContent) {
+	type RequestData struct {
+		Page      int
+		PageSize  int
+		SellerId  int `validate:"required" `
+		ChannelId int
+		Account   string
+		OptName   string
+		Ip        string
+		StartTime string
+		EndTime   string
+	}
+	reqdata := RequestData{}
+	if ctx.RequestData(&reqdata) != nil {
+		return
+	}
+	if reqdata.StartTime != "" {
+		reqdata.StartTime = UtcToLocalTime(reqdata.StartTime)
+	}
+	if reqdata.EndTime != "" {
+		reqdata.EndTime = UtcToLocalTime(reqdata.EndTime)
+	}
+	table := thisdb.Table("x_admin_opt_log")
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
+	table = table.Where("ChannelId = ?", reqdata.ChannelId, 0)
+	table = table.Where("Account = ?", reqdata.Account, "")
+	table = table.Where("OptName = ?", reqdata.OptName, "")
+	table = table.Where("Ip = ?", reqdata.Ip, "")
+	table = table.Where("CreateTime >= ?", reqdata.StartTime, "")
+	table = table.Where("CreateTime < ?", reqdata.EndTime, "")
+	total, _ := table.Count("")
+	data, _ := table.PageData(reqdata.Page, reqdata.PageSize)
+	ctx.Put("data", data.GetData())
+	ctx.Put("total", total)
+	ctx.RespOK()
 }
 
 func get_system_config(ctx *XHttpContent) {
