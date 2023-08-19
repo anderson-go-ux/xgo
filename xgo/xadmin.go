@@ -18,6 +18,8 @@ type StructConfig struct {
 	ChannelId   int
 	ConfigName  string
 	ConfigValue string
+	ForClient   int
+	Memo        string
 }
 type AdminModifyConfigData struct {
 	SellerId int `validate:"required" `
@@ -66,14 +68,7 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 		}
 		auth_init(db, fullauth)
 	}
-	/*
-		drop table x_seller;
-		drop table x_channel;
-		drop table x_admin_user;
-		drop table x_admin_role;
-		drop table x_admin_opt_log;
-		drop table x_admin_login_log;
-	*/
+
 	http.OnPostNoAuth("/sapi/user_login", user_login)
 	http.OnPostNoAuth("/sapi/user_logout", user_logout)
 	http.OnPostWithAuth("/sapi/get_seller_names", get_seller_names, "", false, "")
@@ -101,6 +96,7 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 	http.OnPostWithAuth("/sapi/get_opt_log", get_opt_log, "系统管理.操作日志.查", false, "")
 
 	http.OnPostWithAuth("/sapi/get_system_config", get_system_config, "系统管理.系统设置.查", false, "")
+	http.OnPostWithAuth("/sapi/add_system_config", add_system_config, "系统管理.系统设置.增", false, "新增系统设置")
 	http.OnPostWithAuth("/sapi/modify_system_config", modify_system_config, "系统管理.系统设置.改", false, "修改系统设置")
 }
 
@@ -878,7 +874,8 @@ func get_system_config(ctx *XHttpContent) {
 	type RequestData struct {
 		SellerId   int `validate:"required" `
 		ChannelId  int
-		ConfigName []string
+		ConfigName []interface{}
+		Memo       string
 	}
 	reqdata := RequestData{}
 	if ctx.RequestData(&reqdata) != nil {
@@ -886,16 +883,35 @@ func get_system_config(ctx *XHttpContent) {
 	}
 	table := thisdb.Table("x_config")
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
-	if reqdata.ChannelId == 0 {
-		table = table.Where("ChannelId = ?", 0, nil)
-	} else {
-		table = table.Where("(ChannelId = 0 or ChannelId = ?)", reqdata.ChannelId, nil)
+	table = table.Where("ChannelId = ?", reqdata.ChannelId, -1)
+	table = table.Where("ConfigName in  ", reqdata.ConfigName, nil)
+	if reqdata.Memo != "" {
+		table = table.Where("Memo like ?", fmt.Sprintf("%%%v%%", reqdata.Memo), nil)
 	}
-	if len(reqdata.ConfigName) > 0 {
-		table = table.Where("ConfigName in  ", reqdata.ConfigName, nil)
-	}
+	total, _ := table.Count("")
 	config, _ := table.GetList()
 	ctx.Put("data", config.GetData())
+	ctx.Put("total", total)
+	ctx.RespOK()
+}
+
+func add_system_config(ctx *XHttpContent) {
+	type RequestData struct {
+		SellerId    int `validate:"required" `
+		ChannelId   int
+		ConfigName  string
+		ConfigValue string
+		ForClient   int
+		Memo        string
+	}
+	reqdata := RequestData{}
+	if ctx.RequestData(&reqdata) != nil {
+		return
+	}
+	if reqdata.ForClient != 1 {
+		reqdata.ForClient = 2
+	}
+	thisdb.Table("x_config").Insert(reqdata)
 	ctx.RespOK()
 }
 
@@ -908,8 +924,13 @@ func modify_system_config(ctx *XHttpContent) {
 		beforeModifyConfig(&reqdata)
 	}
 	for i := 0; i < len(reqdata.Config); i++ {
-		sql := "update x_config set ConfigValue = ? where SellerId = ? and ChannelId = ? and ConfigName = ?"
-		thisdb.Exec(sql, reqdata.Config[i].ConfigValue, reqdata.SellerId, reqdata.Config[i].ChannelId, reqdata.Config[i].ConfigName)
+		if reqdata.Config[i].Memo != "" {
+			sql := "update x_config set ConfigValue = ?,Memo =?,ForClient = ? where SellerId = ? and ChannelId = ? and ConfigName = ?"
+			thisdb.Exec(sql, reqdata.Config[i].ConfigValue, reqdata.Config[i].Memo, reqdata.Config[i].ForClient, reqdata.SellerId, reqdata.Config[i].ChannelId, reqdata.Config[i].ConfigName)
+		} else {
+			sql := "update x_config set ConfigValue = ?,ForClient = ? where SellerId = ? and ChannelId = ? and ConfigName = ?"
+			thisdb.Exec(sql, reqdata.Config[i].ConfigValue, reqdata.Config[i].ForClient, reqdata.SellerId, reqdata.Config[i].ChannelId, reqdata.Config[i].ConfigName)
+		}
 	}
 	ctx.RespOK()
 }

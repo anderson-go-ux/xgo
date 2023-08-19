@@ -361,27 +361,32 @@ func (this *XDbTable) Where(field interface{}, value interface{}, ignorevalue in
 	if value == ignorevalue {
 		return this
 	}
+	arrdata, ok := value.([]interface{})
+	if ok && len(arrdata) == 0 {
+		return this
+	}
 	if this.wherestr != "" {
 		this.wherestr += " and "
 	}
 	if this.wheregroup != "" && this.groupopt == "" {
 		this.groupopt += "and "
 	}
-	arrdata, ok := value.([]interface{})
 	if !ok {
 		this.wherestr += fmt.Sprintf("(%v)", field)
 		this.wheredata = append(this.wheredata, value)
 	} else {
-		v := "("
-		for i := 0; i < len(arrdata); i++ {
-			v += "?"
-			if i < len(arrdata)-1 {
-				v += ","
+		if len(arrdata) > 0 {
+			v := "("
+			for i := 0; i < len(arrdata); i++ {
+				v += "?"
+				if i < len(arrdata)-1 {
+					v += ","
+				}
 			}
+			v += ")"
+			this.wherestr += fmt.Sprintf("(%v %v)", field, v)
+			this.wheredata = append(this.wheredata, arrdata...)
 		}
-		v += ")"
-		this.wherestr += fmt.Sprintf("(%v %v)", field, v)
-		this.wheredata = append(this.wheredata, arrdata...)
 	}
 	return this
 }
