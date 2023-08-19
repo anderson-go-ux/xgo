@@ -1023,7 +1023,7 @@ func (this *XRedis) Append(key string, value interface{}) error {
 func (this *XRedis) Do(commond string, args ...interface{}) (interface{}, error) {
 	conn := this.redispool.Get()
 	defer conn.Close()
-	ret, err := conn.Do(commond, args)
+	ret, err := conn.Do(commond, args...)
 	return ret, err
 }
 
