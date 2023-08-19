@@ -234,6 +234,7 @@ func user_login(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
+
 	reqdata.Password = Md5(reqdata.Password)
 	type MenuData struct {
 		Icon  string     `json:"icon"`
@@ -241,6 +242,7 @@ func user_login(ctx *XHttpContent) {
 		Title string     `json:"title"`
 		Subs  []MenuData `json:"subs"`
 	}
+
 	lockkey := fmt.Sprintf("lock:admin_login:%v", reqdata.Account)
 	if !thisredis.GetLock(lockkey, 10) {
 		ctx.RespErr("操作频繁,请稍后再试")
@@ -727,10 +729,10 @@ func delete_admin_user(ctx *XHttpContent) {
 
 func modify_admin_user_google(ctx *XHttpContent) {
 	type RequestData struct {
-		SellerId   int    `validate:"required" `
+		SellerId   int    `validate:"required"`
 		Account    string `validate:"required"`
-		CodeType   int    `validate:"required" `
-		GoogleCode string `validate:"required" `
+		CodeType   int    `validate:"required"`
+		GoogleCode string `validate:"required"`
 	}
 	reqdata := RequestData{}
 	if ctx.RequestData(&reqdata) != nil {
