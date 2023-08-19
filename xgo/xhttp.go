@@ -169,7 +169,7 @@ func (this *XHttp) Init(cfgname string, token *XRedis) {
 			return true
 		},
 	}
-	if this.token != nil {
+	if this.token != nil && this.request_log_callback != nil {
 		go func() {
 			for {
 				logdata, _ := this.token.BLPop("token:http_request", 86400)
