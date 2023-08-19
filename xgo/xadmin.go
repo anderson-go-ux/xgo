@@ -101,7 +101,7 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 	http.OnPostWithAuth("/sapi/get_opt_log", get_opt_log, "系统管理.操作日志.查", false, "")
 
 	http.OnPostWithAuth("/sapi/get_system_config", get_system_config, "系统管理.系统设置.查", false, "")
-	http.OnPostWithAuth("/sapi/modify_system_config", modify_system_config, "系统管理.系统设置.改", false, "")
+	http.OnPostWithAuth("/sapi/modify_system_config", modify_system_config, "系统管理.系统设置.改", false, "修改系统设置")
 }
 
 func GetAdminToken(ctx *XHttpContent) *AdminTokenData {

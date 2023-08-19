@@ -263,9 +263,18 @@ func (this *XHttp) OnPostWithAuth(path string, handler XHttpHandler, auth string
 				}
 			}
 		}
-		jlog := H{"ReqPath": gc.Request.URL.Path,
-			"ReqData": jbody, "Account": jtoken["Account"], "UserId": jtoken["UserId"],
-			"SellerId": jtoken["SellerId"], "ChannelId": jtoken["ChannelId"], "Ip": ctx.GetIp(), "Token": tokenstr, "OptName": optname}
+		jlog := H{
+			"ReqPath":   gc.Request.URL.Path,
+			"ReqData":   jbody,
+			"Account":   jtoken["Account"],
+			"UserId":    jtoken["UserId"],
+			"SellerId":  jtoken["SellerId"],
+			"ChannelId": jtoken["ChannelId"],
+			"Ip":        ctx.GetIp(),
+			"Token":     tokenstr,
+			"OptName":   optname,
+			"OptTime":   GetLocalTime(),
+		}
 		strlog, _ := json.Marshal(&jlog)
 		this.token.RPush("token:http_request", string(strlog))
 		if len(auth) > 0 {
@@ -341,7 +350,7 @@ func (this *XHttp) OnPostNoAuth(path string, handler XHttpHandler) {
 			ctx.RespErr(4, "参数必须是json格式")
 			return
 		}
-		jlog := gin.H{"ReqPath": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp()}
+		jlog := gin.H{"ReqPath": gc.Request.URL.Path, "ReqData": jbody, "Ip": ctx.GetIp(), "OptTime": GetLocalTime()}
 		strlog, _ := json.Marshal(&jlog)
 		if this.token != nil {
 			this.token.RPush("token:http_request", string(strlog))
