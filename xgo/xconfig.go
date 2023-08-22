@@ -30,7 +30,7 @@ func GetConfigInt(key string, require bool, invalval int) int {
 func GetConfigString(key string, require bool, invalval string) string {
 	val := viper.GetString(key)
 	if require && val == invalval {
-		err := fmt.Sprint("read Yaml error:", key)
+		err := fmt.Sprint("read config error:", key)
 		logs.Error(err)
 		panic(err)
 	}
@@ -40,7 +40,7 @@ func GetConfigString(key string, require bool, invalval string) string {
 func GetConfigFloat(key string, require bool, invalval float32) float32 {
 	val := viper.GetFloat64(key)
 	if require && val == float64(invalval) {
-		err := fmt.Sprint("read Yaml error:", key)
+		err := fmt.Sprint("read config error:", key)
 		logs.Error(err)
 		panic(err)
 	}
