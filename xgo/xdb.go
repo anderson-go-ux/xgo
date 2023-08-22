@@ -44,8 +44,8 @@ func (this *XDb) Init(cfgname string) {
 	this.connmaxidletime = GetConfigInt(fmt.Sprint(cfgname, ".connmaxidletime"), true, 0)
 	this.connmaxidle = GetConfigInt(fmt.Sprint(cfgname, ".connmaxidle"), true, 0)
 	this.connmaxopen = GetConfigInt(fmt.Sprint(cfgname, ".connmaxopen"), true, 0)
-	str := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", this.user, this.password, this.host, this.port, this.database)
-	db, err := gorm.Open("mysql", str)
+	conurl := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", this.user, this.password, this.host, this.port, this.database)
+	db, err := gorm.Open("mysql", conurl)
 	if err != nil {
 		logs.Error(err)
 		panic(err)
