@@ -326,17 +326,20 @@ func (this *XDbData) Delete(field string) {
 
 type XDbTable struct {
 	db         *XDb
-	tablename  string
+	tablename  []string
 	wheregroup string
 	groupopt   string
 	wherestr   string
 	wheredata  []interface{}
 	selectstr  string
 	orderby    string
+	limit      int64
+	offset     int64
+	join       []string
 }
 
 func (this *XDb) Table(name string) *XDbTable {
-	table := XDbTable{db: this, tablename: name}
+	table := XDbTable{db: this, tablename: strings.Split(name, ",")}
 	return &table
 }
 
@@ -347,6 +350,11 @@ func (this *XDbTable) Select(selectstr string) *XDbTable {
 
 func (this *XDbTable) OrderBy(selectstr string) *XDbTable {
 	this.orderby = selectstr
+	return this
+}
+
+func (this *XDbTable) Join(joinstr string) *XDbTable {
+	this.join = append(this.join, joinstr)
 	return this
 }
 
@@ -423,11 +431,16 @@ func (this *XDbTable) Or(field interface{}, value interface{}, ignorevalue inter
 	return this
 }
 
-func (this *XDbTable) GetOne() (*XDbData, error) {
+func (this *XDbTable) First() (*XDbData, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
 	}
-	sql := fmt.Sprintf("select %v from %v", this.selectstr, this.tablename)
+	sql := fmt.Sprintf("select %v from %v", this.selectstr, this.tablename[0])
+
+	for i := 0; i < len(this.join); i++ {
+		sql += fmt.Sprintf(" %v ", this.join[i])
+	}
+
 	if this.wherestr == "" {
 		this.groupopt = ""
 	}
@@ -451,22 +464,52 @@ func (this *XDbTable) GetOne() (*XDbData, error) {
 	return (*data).Index(0), nil
 }
 
-func (this *XDbTable) GetList() (*XDbDataArray, error) {
+func (this *XDbTable) Limit(limit int64) *XDbTable {
+	this.limit = limit
+	return this
+}
+
+func (this *XDbTable) Offset(offset int64) *XDbTable {
+	this.offset = offset
+	return this
+}
+
+func (this *XDbTable) Find() (*XDbDataArray, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
 	}
-	sql := fmt.Sprintf("select %v from %v", this.selectstr, this.tablename)
-	if this.wherestr == "" {
-		this.groupopt = ""
+	sql := ""
+	for i := 0; i < len(this.tablename); i++ {
+		sqlex := fmt.Sprintf("select %v from %v", this.selectstr, this.tablename[i])
+		if len(this.tablename) == 1 {
+			for i := 0; i < len(this.join); i++ {
+				sqlex += fmt.Sprintf(" %v ", this.join[i])
+			}
+		}
+		if this.wherestr == "" {
+			this.groupopt = ""
+		}
+		wherestr := this.wheregroup + this.groupopt + this.wherestr
+		if wherestr != "" {
+			sqlex += " where "
+		}
+		sqlex += wherestr
+		sql += sqlex
+		if i < len(this.tablename)-1 {
+			this.wheredata = append(this.wheredata, this.wheredata...)
+			sql += " union "
+		}
 	}
-	wherestr := this.wheregroup + this.groupopt + this.wherestr
-	if wherestr != "" {
-		sql += " where "
-	}
-	sql += wherestr
+
 	if this.orderby != "" {
 		sql += " order by "
 		sql += this.orderby
+	}
+	if this.limit > 0 {
+		sql += fmt.Sprintf(" limit %v ", this.limit)
+		if this.offset > 0 {
+			sql += fmt.Sprintf("offset %v ", this.offset)
+		}
 	}
 	data, err := this.db.Query(sql, this.wheredata...)
 	if err != nil {
@@ -592,7 +635,7 @@ func (this *XDbTable) Count(field string) (int64, error) {
 	} else {
 		this.selectstr = fmt.Sprintf("count(%v) as total", field)
 	}
-	total, err := this.GetOne()
+	total, err := this.First()
 	this.selectstr = str
 	if err != nil {
 		return 0, err

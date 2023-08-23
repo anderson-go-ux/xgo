@@ -31,9 +31,5 @@ func main() {
 	http.InitWs("/api/ws")
 	xgo.AdminInit(http, db, redis, fullatuh)
 	xgo.BackupDb(db, "db.sql")
-	http.OnPostNoAuth("/test", func(ctx *xgo.XHttpContent) {
-		data, _ := db.Table("x_user").Where("id in", []interface{}{1, 2, 3}, nil).OrderBy("id desc").GetList()
-		ctx.RespOK(data.GetData())
-	})
 	xgo.Run()
 }
