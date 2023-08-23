@@ -2,10 +2,14 @@ package xgo
 
 import (
 	"bufio"
+	"bytes"
+	"crypto/cipher"
+	"crypto/des"
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha1"
 	"encoding/base32"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -423,4 +427,27 @@ func BackupDb(db *XDb, path string) {
 	write := bufio.NewWriter(file)
 	write.WriteString(strall)
 	write.Flush()
+}
+
+func pcks5padding(ciphertext []byte, blockSize int) []byte {
+	padding := blockSize - len(ciphertext)%blockSize
+	padText := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(ciphertext, padText...)
+}
+
+func DesCbcEncrypt(data, key []byte, iv []byte) ([]byte, error) {
+	block, err := des.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	bs := block.BlockSize()
+	data = pcks5padding(data, bs)
+	blockMode := cipher.NewCBCEncrypter(block, iv)
+	out := make([]byte, len(data))
+	blockMode.CryptBlocks(out, data)
+	return out, nil
+}
+
+func Base64Encode(src []byte) []byte {
+	return []byte(base64.StdEncoding.EncodeToString(src))
 }
