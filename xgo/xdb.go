@@ -190,13 +190,13 @@ func (this *XDb) GetResult(rows *sql.Rows) *XDbDataArray {
 	return &XDbDataArray{rawdata: &data}
 }
 
-func (this *XDb) Exec(query string, args ...any) (*sql.Result, error) {
+func (this *XDb) Exec(query string, args ...any) (sql.Result, error) {
 	data, err := this.db.DB().Exec(query, args...)
 	if err != nil {
 		logs.Error(query, args, err)
 		return nil, err
 	}
-	return &data, nil
+	return data, nil
 }
 
 func (this *XDb) Query(query string, args ...any) (*XDbDataArray, error) {
@@ -546,18 +546,18 @@ func (this *XDbTable) Find() (*XDbDataArray, error) {
 
 }
 
-func (this *XDbTable) Insert(value interface{}) (*sql.Result, error) {
+func (this *XDbTable) Insert(value interface{}) (int64, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
 	}
 	bytes, err := json.Marshal(&value)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	mapdata := map[string]interface{}{}
 	err = json.Unmarshal(bytes, &mapdata)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	fields := ""
 	placeholds := ""
@@ -568,31 +568,41 @@ func (this *XDbTable) Insert(value interface{}) (*sql.Result, error) {
 		datas = append(datas, v)
 	}
 	if len(datas) == 0 {
-		return nil, nil
+		return 0, nil
 	}
 	fields = fields[:len(fields)-1]
 	placeholds = placeholds[:len(placeholds)-1]
 	sql := fmt.Sprintf("insert into %v(%v)values(%v)", this.tablename[0], fields, placeholds)
 	if this.tx != nil {
 		resutl, err := this.tx.Exec(sql, datas...)
-		return &resutl, err
+		if err != nil {
+			return 0, err
+		}
+		id, err := resutl.LastInsertId()
+		return id, err
 	} else {
-		return this.db.Exec(sql, datas...)
+		result, _ := this.db.Exec(sql, datas...)
+		if err != nil {
+			return 0, err
+		}
+		id, err := result.LastInsertId()
+
+		return id, err
 	}
 }
 
-func (this *XDbTable) Replace(value interface{}) (*sql.Result, error) {
+func (this *XDbTable) Replace(value interface{}) (int64, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
 	}
 	bytes, err := json.Marshal(&value)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	mapdata := map[string]interface{}{}
 	err = json.Unmarshal(bytes, &mapdata)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	fields := ""
 	placeholds := ""
@@ -603,31 +613,40 @@ func (this *XDbTable) Replace(value interface{}) (*sql.Result, error) {
 		datas = append(datas, v)
 	}
 	if len(datas) == 0 {
-		return nil, nil
+		return 0, nil
 	}
 	fields = fields[:len(fields)-1]
 	placeholds = placeholds[:len(placeholds)-1]
 	sql := fmt.Sprintf("replace into %v(%v)values(%v)", this.tablename[0], fields, placeholds)
 	if this.tx != nil {
-		resutl, err := this.tx.Exec(sql, datas...)
-		return &resutl, err
+		result, err := this.tx.Exec(sql, datas...)
+		if err != nil {
+			return 0, err
+		}
+		id, err := result.LastInsertId()
+		return id, err
 	} else {
-		return this.db.Exec(sql, datas...)
+		result, err := this.db.Exec(sql, datas...)
+		if err != nil {
+			return 0, err
+		}
+		id, err := result.LastInsertId()
+		return id, err
 	}
 }
 
-func (this *XDbTable) Update(value interface{}) (*sql.Result, error) {
+func (this *XDbTable) Update(value interface{}) (int64, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
 	}
 	bytes, err := json.Marshal(&value)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	mapdata := map[string]interface{}{}
 	err = json.Unmarshal(bytes, &mapdata)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	fields := ""
 	datas := []interface{}{}
@@ -636,7 +655,7 @@ func (this *XDbTable) Update(value interface{}) (*sql.Result, error) {
 		datas = append(datas, v)
 	}
 	if len(datas) == 0 {
-		return nil, nil
+		return 0, nil
 	}
 	fields = fields[:len(fields)-1]
 	sql := fmt.Sprintf("update %v set %v ", this.tablename[0], fields)
@@ -648,13 +667,22 @@ func (this *XDbTable) Update(value interface{}) (*sql.Result, error) {
 	datas = append(datas, this.wheredata...)
 	if this.tx != nil {
 		resutl, err := this.tx.Exec(sql, datas...)
-		return &resutl, err
+		if err != nil {
+			return 0, err
+		}
+		cnt, err := resutl.RowsAffected()
+		return cnt, err
 	} else {
-		return this.db.Exec(sql, datas...)
+		resutl, err := this.db.Exec(sql, datas...)
+		if err != nil {
+			return 0, err
+		}
+		cnt, err := resutl.RowsAffected()
+		return cnt, err
 	}
 }
 
-func (this *XDbTable) Delete() (*sql.Result, error) {
+func (this *XDbTable) Delete() (int64, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
 	}
@@ -665,10 +693,19 @@ func (this *XDbTable) Delete() (*sql.Result, error) {
 	}
 	sql += wherestr
 	if this.tx != nil {
-		resutl, err := this.tx.Exec(sql, this.wheredata...)
-		return &resutl, err
+		result, err := this.tx.Exec(sql, this.wheredata...)
+		if err != nil {
+			return 0, err
+		}
+		cnt, err := result.RowsAffected()
+		return cnt, err
 	} else {
-		return this.db.Exec(sql, this.wheredata...)
+		result, err := this.db.Exec(sql, this.wheredata...)
+		if err != nil {
+			return 0, err
+		}
+		cnt, err := result.RowsAffected()
+		return cnt, err
 	}
 }
 

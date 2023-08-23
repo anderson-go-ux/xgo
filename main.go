@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/zhms/xgo/xgo"
 )
 
@@ -33,11 +31,5 @@ func main() {
 	http.InitWs("/api/ws")
 	xgo.AdminInit(http, db, redis, fullatuh)
 	xgo.BackupDb(db, "db.sql")
-	xf, _ := db.Table("x_user_pool").Insert(xgo.H{
-		"UserId": 1,
-		"Ip":     "abc",
-	})
-	f, _ := (*xf).LastInsertId()
-	fmt.Println(f)
 	xgo.Run()
 }
