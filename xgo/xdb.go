@@ -544,7 +544,7 @@ func (this *XDbTable) Insert(value interface{}) (*sql.Result, error) {
 	}
 	fields = fields[:len(fields)-1]
 	placeholds = placeholds[:len(placeholds)-1]
-	sql := fmt.Sprintf("insert into %v(%v)values(%v)", this.tablename, fields, placeholds)
+	sql := fmt.Sprintf("insert into %v(%v)values(%v)", this.tablename[0], fields, placeholds)
 	return this.db.Exec(sql, datas...)
 }
 
@@ -571,7 +571,7 @@ func (this *XDbTable) Update(value interface{}) (*sql.Result, error) {
 		return nil, nil
 	}
 	fields = fields[:len(fields)-1]
-	sql := fmt.Sprintf("update %v set %v ", this.tablename, fields)
+	sql := fmt.Sprintf("update %v set %v ", this.tablename[0], fields)
 	wherestr := this.wheregroup + this.groupopt + this.wherestr
 	if wherestr != "" {
 		sql += " where "
@@ -585,7 +585,7 @@ func (this *XDbTable) Delete() (*sql.Result, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
 	}
-	sql := fmt.Sprintf("delete from %v ", this.tablename)
+	sql := fmt.Sprintf("delete from %v ", this.tablename[0])
 	wherestr := this.wheregroup + this.groupopt + this.wherestr
 	if wherestr != "" {
 		sql += " where "
