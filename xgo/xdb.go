@@ -64,8 +64,8 @@ func (this *XDb) conn() *sql.DB {
 	return this.db.DB()
 }
 
-func (this *XDb) Begin() *gorm.DB {
-	return this.db.Begin()
+func (this *XDb) Begin() (*sql.Tx, error) {
+	return this.db.DB().Begin()
 }
 
 func (this *XDb) getone(rows *sql.Rows) *map[string]interface{} {
@@ -326,6 +326,7 @@ func (this *XDbData) Delete(field string) {
 
 type XDbTable struct {
 	db         *XDb
+	tx         *sql.Tx
 	tablename  []string
 	wheregroup string
 	groupopt   string
@@ -341,6 +342,11 @@ type XDbTable struct {
 func (this *XDb) Table(name string) *XDbTable {
 	table := XDbTable{db: this, tablename: strings.Split(name, ",")}
 	return &table
+}
+
+func (this *XDbTable) Tx(tx *sql.Tx) *XDbTable {
+	this.tx = tx
+	return this
 }
 
 func (this *XDbTable) Select(selectstr string) *XDbTable {
@@ -454,14 +460,27 @@ func (this *XDbTable) First() (*XDbData, error) {
 		sql += this.orderby
 	}
 	sql += " limit 1"
-	data, err := this.db.Query(sql, this.wheredata...)
-	if err != nil {
-		return nil, err
+	if this.tx != nil {
+		data, err := this.tx.Query(sql, this.wheredata...)
+		if err != nil {
+			return nil, err
+		}
+		result := this.db.GetResult(data)
+		if result.Length() == 0 {
+			return nil, errors.New(DB_ERROR_NORECORD)
+		}
+		return (*result).Index(0), nil
+	} else {
+		data, err := this.db.Query(sql, this.wheredata...)
+		if err != nil {
+			return nil, err
+		}
+		if data.Length() == 0 {
+			return nil, errors.New(DB_ERROR_NORECORD)
+		}
+		return (*data).Index(0), nil
 	}
-	if data.Length() == 0 {
-		return nil, errors.New(DB_ERROR_NORECORD)
-	}
-	return (*data).Index(0), nil
+
 }
 
 func (this *XDbTable) Limit(limit int64) *XDbTable {
@@ -511,11 +530,20 @@ func (this *XDbTable) Find() (*XDbDataArray, error) {
 			sql += fmt.Sprintf("offset %v ", this.offset)
 		}
 	}
-	data, err := this.db.Query(sql, this.wheredata...)
-	if err != nil {
-		return nil, err
+	if this.tx != nil {
+		data, err := this.tx.Query(sql, this.wheredata...)
+		if err != nil {
+			return nil, err
+		}
+		return this.db.GetResult(data), nil
+	} else {
+		data, err := this.db.Query(sql, this.wheredata...)
+		if err != nil {
+			return nil, err
+		}
+		return data, nil
 	}
-	return data, nil
+
 }
 
 func (this *XDbTable) Insert(value interface{}) (*sql.Result, error) {
@@ -545,7 +573,12 @@ func (this *XDbTable) Insert(value interface{}) (*sql.Result, error) {
 	fields = fields[:len(fields)-1]
 	placeholds = placeholds[:len(placeholds)-1]
 	sql := fmt.Sprintf("insert into %v(%v)values(%v)", this.tablename[0], fields, placeholds)
-	return this.db.Exec(sql, datas...)
+	if this.tx != nil {
+		resutl, err := this.tx.Exec(sql, datas...)
+		return &resutl, err
+	} else {
+		return this.db.Exec(sql, datas...)
+	}
 }
 
 func (this *XDbTable) Update(value interface{}) (*sql.Result, error) {
@@ -578,7 +611,12 @@ func (this *XDbTable) Update(value interface{}) (*sql.Result, error) {
 	}
 	sql += wherestr
 	datas = append(datas, this.wheredata...)
-	return this.db.Exec(sql, datas...)
+	if this.tx != nil {
+		resutl, err := this.tx.Exec(sql, datas...)
+		return &resutl, err
+	} else {
+		return this.db.Exec(sql, datas...)
+	}
 }
 
 func (this *XDbTable) Delete() (*sql.Result, error) {
@@ -591,41 +629,12 @@ func (this *XDbTable) Delete() (*sql.Result, error) {
 		sql += " where "
 	}
 	sql += wherestr
-	return this.db.Exec(sql, this.wheredata...)
-}
-
-func (this *XDbTable) PageData(page int, pagesize int) (*XDbDataArray, error) {
-	if page <= 0 {
-		page = 1
+	if this.tx != nil {
+		resutl, err := this.tx.Exec(sql, this.wheredata...)
+		return &resutl, err
+	} else {
+		return this.db.Exec(sql, this.wheredata...)
 	}
-	if pagesize <= 0 {
-		pagesize = 15
-	}
-	if this.selectstr == "" {
-		this.selectstr = "*"
-	}
-	sql := fmt.Sprintf("select %v from %v", this.selectstr, this.tablename)
-	if this.wherestr == "" {
-		this.groupopt = ""
-	}
-	wherestr := this.wheregroup + this.groupopt + this.wherestr
-	if wherestr != "" {
-		sql += " where "
-	}
-	sql += wherestr
-	if this.orderby != "" {
-		sql += " order by "
-		sql += this.orderby
-	}
-	sql += fmt.Sprintf(" limit %v offset %v ", pagesize, (page-1)*pagesize)
-	data, err := this.db.Query(sql, this.wheredata...)
-	if err != nil {
-		return nil, err
-	}
-	if data.Length() == 0 {
-		return data, nil
-	}
-	return data, nil
 }
 
 func (this *XDbTable) Count(field string) (int64, error) {
@@ -641,4 +650,72 @@ func (this *XDbTable) Count(field string) (int64, error) {
 		return 0, err
 	}
 	return total.GetInt64("total"), nil
+}
+
+func (this *XDbTable) PageData(page int, pagesize int) (*XDbDataArray, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if pagesize <= 0 {
+		pagesize = 15
+	}
+	if this.selectstr == "" {
+		this.selectstr = "*"
+	}
+	sql := ""
+	for i := 0; i < len(this.tablename); i++ {
+		sqlex := fmt.Sprintf("select %v from %v", this.selectstr, this.tablename[i])
+		if len(this.tablename) == 1 {
+			for i := 0; i < len(this.join); i++ {
+				sqlex += fmt.Sprintf(" %v ", this.join[i])
+			}
+		}
+		if this.wherestr == "" {
+			this.groupopt = ""
+		}
+		wherestr := this.wheregroup + this.groupopt + this.wherestr
+		if wherestr != "" {
+			sqlex += " where "
+		}
+		sqlex += wherestr
+		sql += sqlex
+		if i < len(this.tablename)-1 {
+			this.wheredata = append(this.wheredata, this.wheredata...)
+			sql += " union "
+		}
+	}
+
+	if this.wherestr == "" {
+		this.groupopt = ""
+	}
+	wherestr := this.wheregroup + this.groupopt + this.wherestr
+	if wherestr != "" {
+		sql += " where "
+	}
+	sql += wherestr
+	if this.orderby != "" {
+		sql += " order by "
+		sql += this.orderby
+	}
+	sql += fmt.Sprintf(" limit %v offset %v ", pagesize, (page-1)*pagesize)
+	if this.tx != nil {
+		data, err := this.tx.Query(sql, this.wheredata...)
+		if err != nil {
+			return nil, err
+		}
+		result := this.db.GetResult(data)
+		if result.Length() == 0 {
+			return result, nil
+		}
+		return result, nil
+	} else {
+		data, err := this.db.Query(sql, this.wheredata...)
+		if err != nil {
+			return nil, err
+		}
+		if data.Length() == 0 {
+			return data, nil
+		}
+		return data, nil
+	}
 }
