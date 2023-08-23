@@ -44,6 +44,8 @@ go get code.google.com/p/mahonia
 go get github.com/360EntSecGroup-Skylar/excelize
 go clean -modcache
 */
+var TimeLayout string = "2006-01-02 15:04:05"
+var DateLayout string = "2006-01-02"
 
 type H map[string]any
 
