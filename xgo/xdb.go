@@ -581,6 +581,41 @@ func (this *XDbTable) Insert(value interface{}) (*sql.Result, error) {
 	}
 }
 
+func (this *XDbTable) Replace(value interface{}) (*sql.Result, error) {
+	if this.selectstr == "" {
+		this.selectstr = "*"
+	}
+	bytes, err := json.Marshal(&value)
+	if err != nil {
+		return nil, err
+	}
+	mapdata := map[string]interface{}{}
+	err = json.Unmarshal(bytes, &mapdata)
+	if err != nil {
+		return nil, err
+	}
+	fields := ""
+	placeholds := ""
+	datas := []interface{}{}
+	for k, v := range mapdata {
+		fields += fmt.Sprintf("%v,", k)
+		placeholds += "?,"
+		datas = append(datas, v)
+	}
+	if len(datas) == 0 {
+		return nil, nil
+	}
+	fields = fields[:len(fields)-1]
+	placeholds = placeholds[:len(placeholds)-1]
+	sql := fmt.Sprintf("replace into %v(%v)values(%v)", this.tablename[0], fields, placeholds)
+	if this.tx != nil {
+		resutl, err := this.tx.Exec(sql, datas...)
+		return &resutl, err
+	} else {
+		return this.db.Exec(sql, datas...)
+	}
+}
+
 func (this *XDbTable) Update(value interface{}) (*sql.Result, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
