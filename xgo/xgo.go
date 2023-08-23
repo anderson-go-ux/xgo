@@ -262,7 +262,7 @@ func TimeStampToLocalDate(tvalue int64) string {
 	if tvalue == 0 {
 		return ""
 	}
-	tm := time.Unix(tvalue/1000, 0)
+	tm := time.Unix(tvalue, 0)
 	tstr := tm.Format("2006-01-02")
 	return strings.Split(tstr, " ")[0]
 }
@@ -276,7 +276,7 @@ func TimeStampToLocalTime(tvalue int64) string {
 	if tvalue == 0 {
 		return ""
 	}
-	tm := time.Unix(tvalue/1000, 0)
+	tm := time.Unix(tvalue, 0)
 	tstr := tm.Format("2006-01-02 15:04:05")
 	return tstr
 }
