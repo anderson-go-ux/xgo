@@ -589,12 +589,11 @@ func (this *XDbTable) Insert(value interface{}) (int64, error) {
 		id, err := resutl.LastInsertId()
 		return id, err
 	} else {
-		result, _ := this.db.Exec(sql, datas...)
+		result, err := this.db.Exec(sql, datas...)
 		if err != nil {
 			return 0, err
 		}
 		id, err := result.LastInsertId()
-
 		return id, err
 	}
 }
