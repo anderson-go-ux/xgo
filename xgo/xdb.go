@@ -216,13 +216,13 @@ type XDbDataArray struct {
 	rawdata *[]*XDbData
 }
 
-func (this *XDbDataArray) GetData() *[]*map[string]interface{} {
+func (this *XDbDataArray) RawData() *[]*map[string]interface{} {
 	if this.rawdata == nil {
 		return nil
 	}
 	data := []*map[string]interface{}{}
 	for i := 0; i < len(*this.rawdata); i++ {
-		data = append(data, (*this.rawdata)[i].GetData())
+		data = append(data, (*this.rawdata)[i].RawData())
 	}
 	return &data
 }
@@ -265,11 +265,11 @@ func (this *XDbData) map_field(field string) interface{} {
 	return (*this.rawdata)[field]
 }
 
-func (this *XDbData) GetData() *map[string]interface{} {
+func (this *XDbData) RawData() *map[string]interface{} {
 	return this.rawdata
 }
 
-func (this *XDbData) GetInt(field string) int {
+func (this *XDbData) Int(field string) int {
 	data := this.map_field(field)
 	if data == nil {
 		return 0
@@ -277,7 +277,7 @@ func (this *XDbData) GetInt(field string) int {
 	return int(InterfaceToInt(data))
 }
 
-func (this *XDbData) GetInt32(field string) int32 {
+func (this *XDbData) Int32(field string) int32 {
 	data := this.map_field(field)
 	if data == nil {
 		return 0
@@ -285,7 +285,7 @@ func (this *XDbData) GetInt32(field string) int32 {
 	return int32(InterfaceToInt(data))
 }
 
-func (this *XDbData) GetInt64(field string) int64 {
+func (this *XDbData) Int64(field string) int64 {
 	data := this.map_field(field)
 	if data == nil {
 		return 0
@@ -293,7 +293,7 @@ func (this *XDbData) GetInt64(field string) int64 {
 	return int64(InterfaceToInt(data))
 }
 
-func (this *XDbData) GetFloat32(field string) float32 {
+func (this *XDbData) Float32(field string) float32 {
 	data := this.map_field(field)
 	if data == nil {
 		return 0
@@ -301,7 +301,7 @@ func (this *XDbData) GetFloat32(field string) float32 {
 	return float32(InterfaceToFloat(data))
 }
 
-func (this *XDbData) GetFloat64(field string) float64 {
+func (this *XDbData) Float64(field string) float64 {
 	data := this.map_field(field)
 	if data == nil {
 		return 0
@@ -309,12 +309,20 @@ func (this *XDbData) GetFloat64(field string) float64 {
 	return InterfaceToFloat(data)
 }
 
-func (this *XDbData) GetString(field string) string {
+func (this *XDbData) String(field string) string {
 	data := this.map_field(field)
 	if data == nil {
 		return ""
 	}
 	return InterfaceToString(data)
+}
+
+func (this *XDbData) Bytes(field string) []byte {
+	data := this.map_field(field)
+	if data == nil {
+		return []byte{}
+	}
+	return []byte(InterfaceToString(data))
 }
 
 func (this *XDbData) Delete(field string) {
@@ -721,7 +729,7 @@ func (this *XDbTable) Count(field string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return total.GetInt64("total"), nil
+	return total.Int64("total"), nil
 }
 
 func (this *XDbTable) PageData(page int, pagesize int) (*XDbDataArray, error) {

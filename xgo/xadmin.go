@@ -50,7 +50,7 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 	thisredis = redis
 	if env != "dev" {
 		data, _ := db.Table("x_seller").Select("count(*) as count").First()
-		count := data.GetInt("count")
+		count := data.Int("count")
 		if count == 0 {
 			db.Table("x_seller").Insert(H{
 				"SellerId":   1,
@@ -58,7 +58,7 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 			})
 		}
 		data, _ = db.Table("x_channel").Select("count(*) as count").First()
-		count = data.GetInt("count")
+		count = data.Int("count")
 		if count == 0 {
 			db.Table("x_channel").Insert(H{
 				"SellerId":    1,
@@ -122,7 +122,7 @@ func auth_init(db *XDb, fullauth string) {
 	authstr := string(jbytes)
 	sellers, err := thisdb.Table("x_seller").Find()
 	sellers.ForEach(func(xd *XDbData) bool {
-		SellerId := xd.GetInt("SellerId")
+		SellerId := xd.Int("SellerId")
 		_, err := thisdb.Table("x_admin_role").Where("SellerId = ? and RoleName = '运营商超管'", SellerId, nil).First()
 		if err != nil && err.Error() == DB_ERROR_NORECORD {
 			thisdb.Table("x_admin_role").Insert(H{
@@ -147,23 +147,23 @@ func auth_init(db *XDb, fullauth string) {
 	sql := "update x_admin_role set RoleData = ? where RoleName = ?"
 	db.conn().Exec(sql, authstr, "运营商超管")
 	super, err := thisdb.Table("x_admin_role").Where("SellerId = ? and RoleName = '超级管理员'", -1, nil).First()
-	if super.GetString("RoleData") != fullauth {
+	if super.String("RoleData") != fullauth {
 		roles, _ := thisdb.Table("x_admin_role").Find()
 		roles.ForEach(func(xd *XDbData) bool {
-			if xd.GetString("RoleName") == "超级管理员" {
+			if xd.String("RoleName") == "超级管理员" {
 				return true
 			}
 			jnewdata := make(map[string]interface{})
 			json.Unmarshal([]byte(fullauth), &jnewdata)
 			clean_auth(jnewdata)
 			jrdata := make(map[string]interface{})
-			json.Unmarshal([]byte(xd.GetString("RoleData")), &jrdata)
+			json.Unmarshal([]byte(xd.String("RoleData")), &jrdata)
 			for k, v := range jrdata {
 				set_auth(k, jnewdata, v.(map[string]interface{}))
 			}
 			newauthbyte, _ := json.Marshal(&jnewdata)
 			sql = "update x_admin_role set RoleData = ? where id = ?"
-			thisdb.Exec(sql, string(newauthbyte), xd.GetInt("Id"))
+			thisdb.Exec(sql, string(newauthbyte), xd.Int("Id"))
 			return true
 		})
 	}
@@ -258,20 +258,20 @@ func user_login(ctx *XHttpContent) {
 		}
 		return
 	}
-	if user.GetInt("State") != 1 {
+	if user.Int("State") != 1 {
 		ctx.RespErr("账号已禁用")
 		return
 	}
-	if strings.Index(env, "prd") >= 0 && user.GetString("LoginGoogle") != "" && !VerifyGoogleCode(user.GetString("LoginGoogle"), reqdata.GoogleCode) {
+	if strings.Index(env, "prd") >= 0 && user.String("LoginGoogle") != "" && !VerifyGoogleCode(user.String("LoginGoogle"), reqdata.GoogleCode) {
 		ctx.RespErr("验证码错误")
 		return
 	}
-	if user.GetString("Password") != reqdata.Password {
+	if user.String("Password") != reqdata.Password {
 		ctx.RespErr("密码不正确")
 		return
 	}
 
-	seller, err := thisdb.Table("x_seller").Where("SellerId = ?", user.GetString("SellerId"), nil).First()
+	seller, err := thisdb.Table("x_seller").Where("SellerId = ?", user.String("SellerId"), nil).First()
 	if err != nil {
 		if err.Error() == DB_ERROR_NORECORD {
 			ctx.RespErr("运营商不存在")
@@ -281,12 +281,12 @@ func user_login(ctx *XHttpContent) {
 		}
 		return
 	}
-	if seller.GetInt("State") != 1 {
+	if seller.Int("State") != 1 {
 		ctx.RespErr("运营商已禁用")
 		return
 	}
-	role, err := thisdb.Table("x_admin_role").Where("SellerId = ?", user.GetInt("SellerId"), nil).
-		Where("RoleName = ?", user.GetString("RoleName"), nil).First()
+	role, err := thisdb.Table("x_admin_role").Where("SellerId = ?", user.Int("SellerId"), nil).
+		Where("RoleName = ?", user.String("RoleName"), nil).First()
 	if err != nil {
 		if err.Error() == DB_ERROR_NORECORD {
 			ctx.RespErr("角色不存在")
@@ -295,27 +295,27 @@ func user_login(ctx *XHttpContent) {
 			ctx.RespErr("登录失败,请稍后再试")
 		}
 	}
-	if role.GetInt("State") != 1 {
+	if role.Int("State") != 1 {
 		ctx.RespErr("角色已禁用")
 		return
 	}
 
-	if len(user.GetString("Token")) > 0 {
-		thishttp.DelToken(user.GetString("Token"))
+	if len(user.String("Token")) > 0 {
+		thishttp.DelToken(user.String("Token"))
 	}
-	if user.GetInt("ChannelId") != 0 {
+	if user.Int("ChannelId") != 0 {
 		ctx.RespErr("该账号为渠道账号,不可登录运营后台")
 		return
 	}
 	token := uuid.New().String()
 	tokendata := AdminTokenData{}
 	tokendata.Account = reqdata.Account
-	tokendata.SellerId = user.GetInt("SellerId")
-	tokendata.ChannelId = user.GetInt("ChannelId")
-	tokendata.AuthData = role.GetString("RoleData")
+	tokendata.SellerId = user.Int("SellerId")
+	tokendata.ChannelId = user.Int("ChannelId")
+	tokendata.AuthData = role.String("RoleData")
 	thishttp.SetToken(token, tokendata)
 	sql := "update x_admin_user set Token = ?,LoginCount = LoginCount + 1,LoginTime = now(),LoginIp = ? where id = ?"
-	thisdb.Exec(sql, token, ctx.GetIp(), user.GetInt("Id"))
+	thisdb.Exec(sql, token, ctx.GetIp(), user.Int("Id"))
 	thisdb.Table("x_admin_login_log").Insert(H{
 		"SellerId":   tokendata.SellerId,
 		"ChannelId":  tokendata.ChannelId,
@@ -326,14 +326,14 @@ func user_login(ctx *XHttpContent) {
 	})
 	jauth := make(map[string]interface{})
 	json.Unmarshal([]byte(tokendata.AuthData), &jauth)
-	ctx.Put("UserId", user.GetInt("Id"))
-	ctx.Put("SellerId", user.GetInt("SellerId"))
-	ctx.Put("ChannelId", user.GetInt("ChannelId"))
+	ctx.Put("UserId", user.Int("Id"))
+	ctx.Put("SellerId", user.Int("SellerId"))
+	ctx.Put("ChannelId", user.Int("ChannelId"))
 	ctx.Put("Account", reqdata.Account)
 	ctx.Put("Token", token)
-	ctx.Put("LoginTime", user.GetString("LoginTime"))
+	ctx.Put("LoginTime", user.String("LoginTime"))
 	ctx.Put("Ip", ctx.GetIp())
-	ctx.Put("LoginCount", user.GetInt("LoginCount"))
+	ctx.Put("LoginCount", user.Int("LoginCount"))
 	ctx.Put("AuthData", jauth)
 	ctx.RespOK()
 }
@@ -354,7 +354,7 @@ func user_logout(ctx *XHttpContent) {
 
 func get_seller_names(ctx *XHttpContent) {
 	sellers, _ := thisdb.Table("x_seller").Select("SellerId,SellerName").Find()
-	ctx.Put("data", sellers.GetData())
+	ctx.Put("data", sellers.RawData())
 	ctx.RespOK()
 }
 
@@ -371,7 +371,7 @@ func get_channel_names(ctx *XHttpContent) {
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.OrderBy("ChannelId asc")
 	channels, _ := table.Find()
-	ctx.Put("data", channels.GetData())
+	ctx.Put("data", channels.RawData())
 	ctx.RespOK()
 }
 
@@ -387,7 +387,7 @@ func get_role_names(ctx *XHttpContent) {
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.Select("RoleName")
 	roles, _ := table.Find()
-	ctx.Put("data", roles.GetData())
+	ctx.Put("data", roles.RawData())
 	ctx.RespOK()
 }
 
@@ -407,7 +407,7 @@ func get_role_data(ctx *XHttpContent) {
 		table = table.Select("RoleData")
 		role, _ := table.First()
 		if role != nil {
-			ctx.Put("RoleData", role.GetString("RoleData"))
+			ctx.Put("RoleData", role.String("RoleData"))
 		}
 	}
 	{
@@ -417,7 +417,7 @@ func get_role_data(ctx *XHttpContent) {
 		table = table.Select("RoleData")
 		role, _ := table.First()
 		if role != nil {
-			ctx.Put("SuperRoleData", role.GetString("RoleData"))
+			ctx.Put("SuperRoleData", role.String("RoleData"))
 		}
 	}
 	ctx.RespOK()
@@ -447,7 +447,7 @@ func get_channel(ctx *XHttpContent) {
 	table = table.Where("ChannelName = ?", reqdata.ChannelName, "")
 	total, _ := table.Count("")
 	channels, _ := table.Find()
-	ctx.Put("data", channels.GetData())
+	ctx.Put("data", channels.RawData())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
@@ -540,7 +540,7 @@ func get_role(ctx *XHttpContent) {
 	table = table.Where("RoleName = ?", reqdata.RoleName, "")
 	total, _ := table.Count("")
 	roles, _ := table.PageData(reqdata.Page, reqdata.PageSize)
-	ctx.Put("data", roles.GetData())
+	ctx.Put("data", roles.RawData())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
@@ -647,7 +647,7 @@ func get_admin_user(ctx *XHttpContent) {
 		xd.Delete("OptGoogle")
 		return true
 	})
-	ctx.Put("data", users.GetData())
+	ctx.Put("data", users.RawData())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
@@ -752,8 +752,8 @@ func modify_admin_user_google(ctx *XHttpContent) {
 	}
 
 	me, _ := thisdb.Table("x_admin_user").Where("SellerId = ?", token.SellerId, nil).Where("Account = ?", token.Account, nil).First()
-	OptGoogle := me.GetString("OptGoogle")
-	LoginGoogle := me.GetString("LoginGoogle")
+	OptGoogle := me.String("OptGoogle")
+	LoginGoogle := me.String("LoginGoogle")
 	if reqdata.Account != token.Account {
 		if OptGoogle == "" {
 			ctx.RespErr(fmt.Sprintf("请先设置账号 %v 的操作验证码", token.Account))
@@ -766,19 +766,19 @@ func modify_admin_user_google(ctx *XHttpContent) {
 	} else {
 		if reqdata.CodeType == 2 && LoginGoogle == "" {
 			if OptGoogle == "" {
-				ctx.RespErr(fmt.Sprintf("请先设置账号 %v 的登录验证码", me.GetString("Account")))
+				ctx.RespErr(fmt.Sprintf("请先设置账号 %v 的登录验证码", me.String("Account")))
 				return
 			}
 		}
 		if OptGoogle != "" {
 			if strings.Index(env, "prd") >= 0 && VerifyGoogleCode(OptGoogle, reqdata.GoogleCode) {
-				ctx.RespErr(fmt.Sprintf("验证码不正确,请输入账号 %v 的操作验证码", me.GetString("Account")))
+				ctx.RespErr(fmt.Sprintf("验证码不正确,请输入账号 %v 的操作验证码", me.String("Account")))
 				return
 			}
 		}
 		if LoginGoogle != "" {
 			if strings.Index(env, "prd") >= 0 && VerifyGoogleCode(LoginGoogle, reqdata.GoogleCode) {
-				ctx.RespErr(fmt.Sprintf("验证码不正确,请输入账号 %v 的登录 验证码", me.GetString("Account")))
+				ctx.RespErr(fmt.Sprintf("验证码不正确,请输入账号 %v 的登录 验证码", me.String("Account")))
 				return
 			}
 		}
@@ -786,14 +786,14 @@ func modify_admin_user_google(ctx *XHttpContent) {
 	seller, _ := thisdb.Table("x_seller").Where("SellerId = ?", reqdata.SellerId, nil).First()
 	if reqdata.CodeType == 1 {
 		verifykey := NewGoogleSecret()
-		verifyurl := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=%s-登录", reqdata.Account, verifykey, seller.GetString("SellerName"))
-		thisdb.Exec("update x_admin_user set LoginGoogle = ? where Id = ?", verifykey, user.GetInt("Id"))
+		verifyurl := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=%s-登录", reqdata.Account, verifykey, seller.String("SellerName"))
+		thisdb.Exec("update x_admin_user set LoginGoogle = ? where Id = ?", verifykey, user.Int("Id"))
 		ctx.Put("url", verifyurl)
 		ctx.RespOK()
 	} else if reqdata.CodeType == 2 {
 		verifykey := NewGoogleSecret()
-		verifyurl := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=%s-操作", reqdata.Account, verifykey, seller.GetString("SellerName"))
-		thisdb.Exec("update x_admin_user set OptGoogle = ? where Id = ?", verifykey, user.GetInt("Id"))
+		verifyurl := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=%s-操作", reqdata.Account, verifykey, seller.String("SellerName"))
+		thisdb.Exec("update x_admin_user set OptGoogle = ? where Id = ?", verifykey, user.Int("Id"))
 		ctx.Put("url", verifyurl)
 		ctx.RespOK()
 	}
@@ -829,7 +829,7 @@ func get_login_log(ctx *XHttpContent) {
 	table = table.Where("CreateTime < ?", reqdata.EndTime, "")
 	total, _ := table.Count("")
 	data, _ := table.Select("*").PageData(reqdata.Page, reqdata.PageSize)
-	ctx.Put("data", data.GetData())
+	ctx.Put("data", data.RawData())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
@@ -866,7 +866,7 @@ func get_opt_log(ctx *XHttpContent) {
 	table = table.Where("CreateTime < ?", reqdata.EndTime, "")
 	total, _ := table.Count("")
 	data, _ := table.PageData(reqdata.Page, reqdata.PageSize)
-	ctx.Put("data", data.GetData())
+	ctx.Put("data", data.RawData())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
@@ -891,7 +891,7 @@ func get_system_config(ctx *XHttpContent) {
 	}
 	total, _ := table.Count("")
 	config, _ := table.Find()
-	ctx.Put("data", config.GetData())
+	ctx.Put("data", config.RawData())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }

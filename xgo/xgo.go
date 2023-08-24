@@ -374,11 +374,11 @@ func BackupDb(db *XDb, path string) {
 	var tables []string
 	data, _ := db.Query("SHOW FULL TABLES")
 	data.ForEach(func(xd *XDbData) bool {
-		for k, v := range *xd.GetData() {
+		for k, v := range *xd.RawData() {
 			if strings.Index(k, "Tables_in_") >= 0 {
 				tables = append(tables, v.(string))
 				td, _ := db.Query(fmt.Sprint("show create table ", v))
-				s := td.Index(0).GetString("Create Table")
+				s := td.Index(0).String("Create Table")
 				s = strings.Replace(s, "`", "", -1)
 				s = strings.Replace(s, "DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci", "", -1)
 				s = strings.Replace(s, "CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci", "", -1)
@@ -408,7 +408,7 @@ func BackupDb(db *XDb, path string) {
 		td, _ := db.Query(fmt.Sprintf("DESCRIBE %v", tables[i]))
 		strall += fmt.Sprintf("type %v struct {\r\n", tables[i])
 		td.ForEach(func(xd *XDbData) bool {
-			sname := xd.GetString("Type")
+			sname := xd.String("Type")
 			tname := ""
 			if strings.Index(sname, "int") == 0 || strings.Index(sname, "bigint") == 0 || strings.Index(sname, "unsigned") == 0 || strings.Index(sname, "timestamp") == 0 {
 				tname = "int"
@@ -417,7 +417,7 @@ func BackupDb(db *XDb, path string) {
 			} else if strings.Index(sname, "decimal") == 0 {
 				tname = "float64"
 			}
-			strall += fmt.Sprintf("\t%v %v `gorm:\"column:%v\"`\r\n", xd.GetString("Field"), tname, xd.GetString("Field"))
+			strall += fmt.Sprintf("\t%v %v `gorm:\"column:%v\"`\r\n", xd.String("Field"), tname, xd.String("Field"))
 			return true
 		})
 		strall += "}\r\n\r\n"
