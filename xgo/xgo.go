@@ -95,7 +95,7 @@ func Md5(str string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func InterfaceToString(v interface{}) string {
+func ToString(v interface{}) string {
 	if v == nil {
 		return ""
 	}
@@ -116,15 +116,7 @@ func InterfaceToString(v interface{}) string {
 	return ""
 }
 
-func GetMapString(mp *map[string]interface{}, field string) string {
-	if mp == nil {
-		return ""
-	}
-	v := (*mp)[field]
-	return InterfaceToString(v)
-}
-
-func InterfaceToInt(v interface{}) int64 {
+func ToInt(v interface{}) int64 {
 	if v == nil {
 		return 0
 	}
@@ -149,15 +141,7 @@ func InterfaceToInt(v interface{}) int64 {
 	return 0
 }
 
-func GetMapInt(mp *map[string]interface{}, field string) int64 {
-	if mp == nil {
-		return 0
-	}
-	v := (*mp)[field]
-	return InterfaceToInt(v)
-}
-
-func InterfaceToFloat(v interface{}) float64 {
+func ToFloat(v interface{}) float64 {
 	if v == nil {
 		return 0
 	}
@@ -180,14 +164,6 @@ func InterfaceToFloat(v interface{}) float64 {
 		return v.(float64)
 	}
 	return 0
-}
-
-func GetMapFloat(mp *map[string]interface{}, field string) float64 {
-	if mp == nil {
-		return 0
-	}
-	v := (*mp)[field]
-	return InterfaceToFloat(v)
 }
 
 func onetimepassword(key []byte, value []byte) uint32 {
@@ -342,13 +318,13 @@ func GetDbError(data *map[string]interface{}) *DBError {
 	if !codeok {
 		return nil
 	}
-	err.ErrCode = int(InterfaceToInt(code))
+	err.ErrCode = int(ToInt(code))
 	if err.ErrCode == 0 {
 		return nil
 	}
 	msg, msgok := (*data)["errmsg"]
 	if msgok {
-		err.ErrMsg = InterfaceToString(msg)
+		err.ErrMsg = ToString(msg)
 	}
 	return &err
 }

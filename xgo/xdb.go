@@ -274,7 +274,7 @@ func (this *XDbData) Int(field string) int {
 	if data == nil {
 		return 0
 	}
-	return int(InterfaceToInt(data))
+	return int(ToInt(data))
 }
 
 func (this *XDbData) Int32(field string) int32 {
@@ -282,7 +282,7 @@ func (this *XDbData) Int32(field string) int32 {
 	if data == nil {
 		return 0
 	}
-	return int32(InterfaceToInt(data))
+	return int32(ToInt(data))
 }
 
 func (this *XDbData) Int64(field string) int64 {
@@ -290,7 +290,7 @@ func (this *XDbData) Int64(field string) int64 {
 	if data == nil {
 		return 0
 	}
-	return int64(InterfaceToInt(data))
+	return int64(ToInt(data))
 }
 
 func (this *XDbData) Float32(field string) float32 {
@@ -298,7 +298,7 @@ func (this *XDbData) Float32(field string) float32 {
 	if data == nil {
 		return 0
 	}
-	return float32(InterfaceToFloat(data))
+	return float32(ToFloat(data))
 }
 
 func (this *XDbData) Float64(field string) float64 {
@@ -306,7 +306,7 @@ func (this *XDbData) Float64(field string) float64 {
 	if data == nil {
 		return 0
 	}
-	return InterfaceToFloat(data)
+	return ToFloat(data)
 }
 
 func (this *XDbData) String(field string) string {
@@ -314,7 +314,7 @@ func (this *XDbData) String(field string) string {
 	if data == nil {
 		return ""
 	}
-	return InterfaceToString(data)
+	return ToString(data)
 }
 
 func (this *XDbData) Bytes(field string) []byte {
@@ -322,7 +322,7 @@ func (this *XDbData) Bytes(field string) []byte {
 	if data == nil {
 		return []byte{}
 	}
-	return []byte(InterfaceToString(data))
+	return []byte(ToString(data))
 }
 
 func (this *XDbData) Delete(field string) {

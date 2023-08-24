@@ -193,7 +193,7 @@ func clean_auth(node map[string]interface{}) {
 func set_auth(parent string, newdata map[string]interface{}, node map[string]interface{}) {
 	for k, v := range node {
 		if strings.Index(reflect.TypeOf(v).Name(), "float") >= 0 {
-			if InterfaceToFloat(v) != 1 {
+			if ToFloat(v) != 1 {
 				continue
 			}
 			path := strings.Split(parent, ".")
