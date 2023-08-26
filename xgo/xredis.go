@@ -146,57 +146,57 @@ func (this *XRedis) ReleaseLock(key string) {
 	this.Del(key)
 }
 
-func (this *XRedis) GetCacheMap(key string, cb func() *map[string]interface{}) *map[string]interface{} {
+func (this *XRedis) GetCacheMap(key string, cb func() (*map[string]interface{}, error)) (*map[string]interface{}, error) {
 	key = fmt.Sprintf("%v:%v", project, key)
 	data, _ := this.Get(key)
 	if data != nil {
 		jdata := map[string]interface{}{}
 		json.Unmarshal(data, &jdata)
-		return &jdata
+		return &jdata, nil
 	} else {
 		return cb()
 	}
 }
 
-func (this *XRedis) GetCacheArray(key string, cb func() *[]interface{}) *[]interface{} {
+func (this *XRedis) GetCacheArray(key string, cb func() (*[]interface{}, error)) (*[]interface{}, error) {
 	key = fmt.Sprintf("%v:%v", project, key)
 	data, _ := this.Get(key)
 	if data != nil {
 		jdata := []interface{}{}
 		json.Unmarshal(data, &jdata)
-		return &jdata
+		return &jdata, nil
 	} else {
 		return cb()
 	}
 }
 
-func (this *XRedis) GetCacheString(key string, cb func() string) string {
+func (this *XRedis) GetCacheString(key string, cb func() (string, error)) (string, error) {
 	key = fmt.Sprintf("%v:%v", project, key)
 	data, _ := this.Get(key)
 	if data != nil {
-		return string(data)
+		return string(data), nil
 	} else {
 		return cb()
 	}
 }
 
-func (this *XRedis) GetCacheInt(key string, cb func() int64) int64 {
+func (this *XRedis) GetCacheInt(key string, cb func() (int64, error)) (int64, error) {
 	key = fmt.Sprintf("%v:%v", project, key)
 	data, _ := this.Get(key)
 	if data != nil {
 		r, _ := strconv.ParseInt(string(data), 10, 64)
-		return r
+		return r, nil
 	} else {
 		return cb()
 	}
 }
 
-func (this *XRedis) GetCacheFloat(key string, cb func() float64) float64 {
+func (this *XRedis) GetCacheFloat(key string, cb func() (float64, error)) (float64, error) {
 	key = fmt.Sprintf("%v:%v", project, key)
 	data, _ := this.Get(key)
 	if data != nil {
 		r, _ := strconv.ParseFloat(string(data), 32)
-		return r
+		return r, nil
 	} else {
 		return cb()
 	}
