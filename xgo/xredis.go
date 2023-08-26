@@ -889,7 +889,7 @@ func (this *XRedis) Get(key string) ([]byte, error) {
 		return nil, err
 	}
 	if ret == nil {
-		return nil, errors.New("not found")
+		return nil, nil
 	}
 	return ret.([]byte), nil
 }
