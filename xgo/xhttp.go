@@ -30,14 +30,14 @@ import (
 	7. 重复请求
 */
 
-type DBLogCallback func([]byte)
+type RequestLogCallback func([]byte)
 
 type XHttp struct {
 	gin   *gin.Engine
 	token *XRedis
 
 	upgrader             websocket.Upgrader
-	request_log_callback DBLogCallback
+	request_log_callback RequestLogCallback
 	idx_conn             sync.Map
 	conn_idx             sync.Map
 	connect_callback     XWsCallback
@@ -180,6 +180,10 @@ func (this *XHttp) Init(cfgname string, token *XRedis) {
 		}()
 	}
 	logs.Debug("http listen:", port)
+}
+
+func (this *XHttp) SetLogCallback(cb RequestLogCallback) {
+	this.request_log_callback = cb
 }
 
 func (this *XHttp) Static(relativePaths string, root string) {
