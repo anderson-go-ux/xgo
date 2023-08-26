@@ -3,7 +3,6 @@ package xgo
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -29,10 +28,6 @@ type XDb struct {
 	connmaxopen     int
 	logmode         bool
 }
-
-const (
-	DB_ERROR_NORECORD = "NORECORD"
-)
 
 func (this *XDb) Init(cfgname string) {
 	this.user = GetConfigString(fmt.Sprint(cfgname, ".user"), true, "")
@@ -475,7 +470,7 @@ func (this *XDbTable) First() (*XDbData, error) {
 		}
 		result := this.db.GetResult(data)
 		if result.Length() == 0 {
-			return nil, errors.New(DB_ERROR_NORECORD)
+			return nil, nil
 		}
 		return (*result).Index(0), nil
 	} else {
@@ -484,7 +479,7 @@ func (this *XDbTable) First() (*XDbData, error) {
 			return nil, err
 		}
 		if data.Length() == 0 {
-			return nil, errors.New(DB_ERROR_NORECORD)
+			return nil, nil
 		}
 		return (*data).Index(0), nil
 	}

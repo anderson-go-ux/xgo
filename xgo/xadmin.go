@@ -123,24 +123,28 @@ func auth_init(db *XDb, fullauth string) {
 	sellers, err := thisdb.Table("x_seller").Find()
 	sellers.ForEach(func(xd *XDbData) bool {
 		SellerId := xd.Int("SellerId")
-		_, err := thisdb.Table("x_admin_role").Where("SellerId = ? and RoleName = '运营商超管'", SellerId, nil).First()
-		if err != nil && err.Error() == DB_ERROR_NORECORD {
-			thisdb.Table("x_admin_role").Insert(H{
-				"SellerId": SellerId,
-				"Parent":   "god",
-				"RoleName": "运营商超管",
-				"RoleData": authstr,
-			})
-		}
-		_, err = thisdb.Table("x_admin_user").Where("SellerId = ?", SellerId, nil).First()
-		if err != nil && err.Error() == DB_ERROR_NORECORD {
-			thisdb.Table("x_admin_user").Insert(H{
-				"SellerId": SellerId,
-				"Account":  fmt.Sprintf("admin%v", SellerId),
-				"Password": Md5(Md5("admin")),
-				"RoleName": "运营商超管",
-			})
+		roledata, err := thisdb.Table("x_admin_role").Where("SellerId = ? and RoleName = '运营商超管'", SellerId, nil).First()
+		if err != nil {
+			if roledata == nil {
+				thisdb.Table("x_admin_role").Insert(H{
+					"SellerId": SellerId,
+					"Parent":   "god",
+					"RoleName": "运营商超管",
+					"RoleData": authstr,
+				})
+			}
 
+		}
+		userdata, err := thisdb.Table("x_admin_user").Where("SellerId = ?", SellerId, nil).First()
+		if err != nil {
+			if userdata == nil {
+				thisdb.Table("x_admin_user").Insert(H{
+					"SellerId": SellerId,
+					"Account":  fmt.Sprintf("admin%v", SellerId),
+					"Password": Md5(Md5("admin")),
+					"RoleName": "运营商超管",
+				})
+			}
 		}
 		return true
 	})
@@ -167,13 +171,15 @@ func auth_init(db *XDb, fullauth string) {
 			return true
 		})
 	}
-	if err != nil && err.Error() == DB_ERROR_NORECORD {
-		thisdb.Table("x_admin_role").Insert(H{
-			"SellerId": -1,
-			"RoleName": "超级管理员",
-			"Parent":   "god",
-			"RoleData": fullauth,
-		})
+	if err != nil {
+		if super == nil {
+			thisdb.Table("x_admin_role").Insert(H{
+				"SellerId": -1,
+				"RoleName": "超级管理员",
+				"Parent":   "god",
+				"RoleData": fullauth,
+			})
+		}
 	} else {
 		sql = "update x_admin_role set RoleData = ? where RoleName = ?"
 		thisdb.Exec(sql, fullauth, "超级管理员")
@@ -273,7 +279,7 @@ func user_login(ctx *XHttpContent) {
 
 	seller, err := thisdb.Table("x_seller").Where("SellerId = ?", user.String("SellerId"), nil).First()
 	if err != nil {
-		if err.Error() == DB_ERROR_NORECORD {
+		if seller == nil {
 			ctx.RespErr("运营商不存在")
 		} else {
 			logs.Error("user_login:", err)
@@ -288,7 +294,7 @@ func user_login(ctx *XHttpContent) {
 	role, err := thisdb.Table("x_admin_role").Where("SellerId = ?", user.Int("SellerId"), nil).
 		Where("RoleName = ?", user.String("RoleName"), nil).First()
 	if err != nil {
-		if err.Error() == DB_ERROR_NORECORD {
+		if role == nil {
 			ctx.RespErr("角色不存在")
 		} else {
 			logs.Error("user_login:", err)
@@ -746,7 +752,11 @@ func modify_admin_user_google(ctx *XHttpContent) {
 	}
 
 	user, err := thisdb.Table("x_admin_user").Where("SellerId = ?", reqdata.SellerId, nil).Where("Account = ?", reqdata.Account, nil).First()
-	if err != nil && err.Error() == DB_ERROR_NORECORD {
+	if err != nil {
+		ctx.RespErr("登录失败,请稍后再试")
+		return
+	}
+	if user == nil {
 		ctx.RespErr("管理员不存在")
 		return
 	}
