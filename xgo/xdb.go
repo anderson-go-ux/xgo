@@ -166,7 +166,7 @@ func (this *XDb) CallProcedure(procname string, args ...interface{}) (*XDbData, 
 			}
 		}
 		dbresult.Close()
-		xdbdata := XDbData{rawdata: &data}
+		xdbdata := XDbData{Raw: &data}
 		return &xdbdata, nil
 	}
 	dbresult.Close()
@@ -179,10 +179,10 @@ func (this *XDb) GetResult(rows *sql.Rows) *XDbDataArray {
 	}
 	data := []*XDbData{}
 	for rows.Next() {
-		data = append(data, &XDbData{rawdata: this.getone(rows)})
+		data = append(data, &XDbData{Raw: this.getone(rows)})
 	}
 	rows.Close()
-	return &XDbDataArray{rawdata: &data}
+	return &XDbDataArray{Raw: &data}
 }
 
 func (this *XDb) Exec(query string, args ...any) (sql.Result, error) {
@@ -204,64 +204,64 @@ func (this *XDb) Query(query string, args ...any) (*XDbDataArray, error) {
 }
 
 type XDbData struct {
-	rawdata *map[string]interface{}
+	Raw *map[string]interface{}
 }
 
 type XDbDataArray struct {
-	rawdata *[]*XDbData
+	Raw *[]*XDbData
 }
 
 func (this *XDbDataArray) RawData() *[]*map[string]interface{} {
-	if this.rawdata == nil {
+	if this.Raw == nil {
 		return nil
 	}
 	data := []*map[string]interface{}{}
-	for i := 0; i < len(*this.rawdata); i++ {
-		data = append(data, (*this.rawdata)[i].RawData())
+	for i := 0; i < len(*this.Raw); i++ {
+		data = append(data, (*this.Raw)[i].RawData())
 	}
 	return &data
 }
 
 func (this *XDbDataArray) Length() int {
-	if this.rawdata == nil {
+	if this.Raw == nil {
 		return 0
 	}
-	return len(*this.rawdata)
+	return len(*this.Raw)
 }
 
 func (this *XDbDataArray) Index(index int) *XDbData {
-	if this.rawdata == nil {
+	if this.Raw == nil {
 		return nil
 	}
 	if index < 0 {
 		return nil
 	}
-	if index >= len(*this.rawdata) {
+	if index >= len(*this.Raw) {
 		return nil
 	}
-	return (*this.rawdata)[index]
+	return (*this.Raw)[index]
 }
 
 func (this *XDbDataArray) ForEach(cb func(*XDbData) bool) {
-	if this.rawdata == nil {
+	if this.Raw == nil {
 		return
 	}
-	for i := 0; i < len(*this.rawdata); i++ {
-		if !cb((*this.rawdata)[i]) {
+	for i := 0; i < len(*this.Raw); i++ {
+		if !cb((*this.Raw)[i]) {
 			break
 		}
 	}
 }
 
 func (this *XDbData) map_field(field string) interface{} {
-	if this.rawdata == nil {
+	if this.Raw == nil {
 		return nil
 	}
-	return (*this.rawdata)[field]
+	return (*this.Raw)[field]
 }
 
 func (this *XDbData) RawData() *map[string]interface{} {
-	return this.rawdata
+	return this.Raw
 }
 
 func (this *XDbData) Int(field string) int {
@@ -321,10 +321,10 @@ func (this *XDbData) Bytes(field string) []byte {
 }
 
 func (this *XDbData) Delete(field string) {
-	if this.rawdata == nil {
+	if this.Raw == nil {
 		return
 	}
-	delete(*this.rawdata, field)
+	delete(*this.Raw, field)
 }
 
 type XDbTable struct {
