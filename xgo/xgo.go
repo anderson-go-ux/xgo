@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	crand "crypto/rand"
 	mrand "math/rand"
@@ -426,4 +427,31 @@ func DesCbcEncrypt(data, key []byte, iv []byte) ([]byte, error) {
 
 func Base64Encode(src []byte) []byte {
 	return []byte(base64.StdEncoding.EncodeToString(src))
+}
+
+func StrContainsLower(str string) bool {
+	for _, char := range str {
+		if unicode.IsLower(char) {
+			return true
+		}
+	}
+	return false
+}
+
+func StrContainsUpper(str string) bool {
+	for _, char := range str {
+		if unicode.IsUpper(char) {
+			return true
+		}
+	}
+	return false
+}
+
+func StrContainsDigit(str string) bool {
+	for _, char := range str {
+		if unicode.IsDigit(char) {
+			return true
+		}
+	}
+	return false
 }
