@@ -383,25 +383,30 @@ func (this *XDbTable) Join(joinstr string) *XDbTable {
 	return this
 }
 
-func (this *XDbTable) Where(field interface{}, value interface{}, ignorevalue interface{}) *XDbTable {
-	if value == ignorevalue {
-		return this
-	}
-	arrdata, ok := value.([]interface{})
-	if ok && len(arrdata) == 0 {
-		return this
-	}
-	if this.wherestr != "" {
-		this.wherestr += " and "
-	}
-	if this.wheregroup != "" && this.groupopt == "" {
-		this.groupopt += "and "
-	}
-	if !ok {
+func (this *XDbTable) Where(field interface{}, value ...interface{}) *XDbTable {
+	if len(value) == 0 {
+		if this.wherestr != "" {
+			this.wherestr += " and "
+		}
+		if this.wheregroup != "" && this.groupopt == "" {
+			this.groupopt += "and "
+		}
 		this.wherestr += fmt.Sprintf("(%v)", field)
-		this.wheredata = append(this.wheredata, value)
-	} else {
-		if len(arrdata) > 0 {
+	} else if len(value) == 1 {
+		arrdata, ok := value[0].([]interface{})
+		if ok && len(arrdata) == 0 {
+			return this
+		}
+		if this.wherestr != "" {
+			this.wherestr += " and "
+		}
+		if this.wheregroup != "" && this.groupopt == "" {
+			this.groupopt += "and "
+		}
+		if !ok {
+			this.wherestr += fmt.Sprintf("(%v)", field)
+			this.wheredata = append(this.wheredata, value)
+		} else {
 			v := "("
 			for i := 0; i < len(arrdata); i++ {
 				v += "?"
@@ -412,6 +417,35 @@ func (this *XDbTable) Where(field interface{}, value interface{}, ignorevalue in
 			v += ")"
 			this.wherestr += fmt.Sprintf("(%v %v)", field, v)
 			this.wheredata = append(this.wheredata, arrdata...)
+		}
+	} else {
+		count := 0
+		for _, char := range field.(string) {
+			if char == '?' {
+				count++
+			}
+		}
+		if count > 1 {
+			if this.wherestr != "" {
+				this.wherestr += " and "
+			}
+			if this.wheregroup != "" && this.groupopt == "" {
+				this.groupopt += "and "
+			}
+			this.wherestr += fmt.Sprintf("(%v)", field)
+			this.wheredata = append(this.wheredata, value...)
+		} else {
+			if value[0] == value[1] {
+				return this
+			}
+			if this.wherestr != "" {
+				this.wherestr += " and "
+			}
+			if this.wheregroup != "" && this.groupopt == "" {
+				this.groupopt += "and "
+			}
+			this.wherestr += fmt.Sprintf("(%v)", field)
+			this.wheredata = append(this.wheredata, value[0])
 		}
 	}
 	return this
