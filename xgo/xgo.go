@@ -13,6 +13,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/rpc"
 	"os"
 	"strconv"
 	"strings"
@@ -58,7 +60,7 @@ func Init() {
 	mrand.NewSource(time.Now().UnixNano())
 	gin.SetMode(gin.ReleaseMode)
 	logs.EnableFuncCallDepth(true)
-	logs.SetLogFuncCallDepth(5)
+	logs.SetLogFuncCallDepth(3)
 	logs.SetLogger(logs.AdapterFile, `{"filename":"_log/logfile.log","maxsize":10485760}`)
 	logs.SetLogger(logs.AdapterConsole, `{"color":true}`)
 	viper.SetConfigType("yaml")
@@ -74,6 +76,25 @@ func Init() {
 	env = GetConfigString("server.env", true, "")
 	project = GetConfigString("server.project", true, "")
 	ipdata = GetConfigString("server.ipdata", false, "")
+	rpcport := viper.GetInt("server.rpc.port")
+	if rpcport > 0 {
+		go func() {
+			listener, err := net.Listen("tcp", fmt.Sprintf(":%d", rpcport))
+			if err != nil {
+				logs.Error("RPC 开启失败:", err)
+				return
+			}
+			go func() {
+				for {
+					conn, err := listener.Accept()
+					if err != nil {
+						continue
+					}
+					go rpc.ServeConn(conn)
+				}
+			}()
+		}()
+	}
 }
 
 func Env() string {
@@ -350,8 +371,8 @@ func BackupDb(db *XDb, path string) {
 	var strall string
 	var tables []string
 	data, _ := db.Query("SHOW FULL TABLES")
-	data.ForEach(func(xd *XDbData) bool {
-		for k, v := range *xd.RawData() {
+	data.ForEach(func(xd *XMap) bool {
+		for k, v := range *xd.Map() {
 			if strings.Index(k, "Tables_in_") >= 0 {
 				tables = append(tables, v.(string))
 				td, _ := db.Query(fmt.Sprint("show create table ", v))
@@ -384,7 +405,7 @@ func BackupDb(db *XDb, path string) {
 	for i := 0; i < len(tables); i++ {
 		td, _ := db.Query(fmt.Sprintf("DESCRIBE %v", tables[i]))
 		strall += fmt.Sprintf("type %v struct {\r\n", tables[i])
-		td.ForEach(func(xd *XDbData) bool {
+		td.ForEach(func(xd *XMap) bool {
 			sname := xd.String("Type")
 			tname := ""
 			if strings.Index(sname, "int") == 0 || strings.Index(sname, "bigint") == 0 || strings.Index(sname, "unsigned") == 0 || strings.Index(sname, "timestamp") == 0 {

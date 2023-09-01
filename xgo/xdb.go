@@ -63,7 +63,7 @@ func (this *XDb) Begin() (*sql.Tx, error) {
 	return this.db.DB().Begin()
 }
 
-func (this *XDb) getone(rows *sql.Rows) *map[string]interface{} {
+func (this *XDb) getone(rows *sql.Rows) *map[string]any {
 	data := make(map[string]interface{})
 	fields, _ := rows.Columns()
 	scans := make([]interface{}, len(fields))
@@ -114,7 +114,7 @@ func (this *XDb) getone(rows *sql.Rows) *map[string]interface{} {
 	return &data
 }
 
-func (this *XDb) CallProcedure(procname string, args ...interface{}) (*XDbData, error) {
+func (this *XDb) CallProcedure(procname string, args ...interface{}) (*XMap, error) {
 	sql := ""
 	for i := 0; i < len(args); i++ {
 		sql += "?,"
@@ -166,23 +166,23 @@ func (this *XDb) CallProcedure(procname string, args ...interface{}) (*XDbData, 
 			}
 		}
 		dbresult.Close()
-		xdbdata := XDbData{rawdata: &data}
-		return &xdbdata, nil
+		XMap := XMap{RawData: data}
+		return &XMap, nil
 	}
 	dbresult.Close()
 	return nil, nil
 }
 
-func (this *XDb) GetResult(rows *sql.Rows) *XDbDataArray {
+func (this *XDb) GetResult(rows *sql.Rows) *XMaps {
 	if rows == nil {
 		return nil
 	}
-	data := []*XDbData{}
+	data := []XMap{}
 	for rows.Next() {
-		data = append(data, &XDbData{rawdata: this.getone(rows)})
+		data = append(data, XMap{RawData: *this.getone(rows)})
 	}
 	rows.Close()
-	return &XDbDataArray{rawdata: &data}
+	return &XMaps{RawData: data}
 }
 
 func (this *XDb) Exec(query string, args ...any) (sql.Result, error) {
@@ -194,7 +194,7 @@ func (this *XDb) Exec(query string, args ...any) (sql.Result, error) {
 	return data, nil
 }
 
-func (this *XDb) Query(query string, args ...any) (*XDbDataArray, error) {
+func (this *XDb) Query(query string, args ...any) (*XMaps, error) {
 	data, err := this.db.DB().Query(query, args...)
 	if err != nil {
 		logs.Error(query, args, err)
@@ -203,84 +203,84 @@ func (this *XDb) Query(query string, args ...any) (*XDbDataArray, error) {
 	return this.GetResult(data), nil
 }
 
-type XDbData struct {
-	rawdata *map[string]interface{}
+type XMap struct {
+	RawData map[string]any
 }
 
-type XDbDataArray struct {
-	rawdata *[]*XDbData
+type XMaps struct {
+	RawData []XMap
 }
 
-func (this *XDbData) FromBytes(bytes []byte) error {
-	this.rawdata = &map[string]interface{}{}
-	return json.Unmarshal(bytes, this.rawdata)
+func (this *XMap) FromBytes(bytes []byte) error {
+	this.RawData = map[string]interface{}{}
+	return json.Unmarshal(bytes, &this.RawData)
 }
 
-func (this *XDbDataArray) FromBytes(bytes []byte) error {
-	this.rawdata = &[]*XDbData{}
+func (this *XMaps) FromBytes(bytes []byte) error {
+	this.RawData = []XMap{}
 	data := []map[string]interface{}{}
 	json.Unmarshal(bytes, &data)
 	for i := 0; i < len(data); i++ {
-		xdbdata := &XDbData{rawdata: &data[i]}
-		*this.rawdata = append(*this.rawdata, xdbdata)
+		XMap := XMap{RawData: data[i]}
+		this.RawData = append(this.RawData, XMap)
 	}
-	return json.Unmarshal(bytes, this.rawdata)
+	return json.Unmarshal(bytes, &this.RawData)
 }
 
-func (this *XDbDataArray) RawData() *[]*map[string]interface{} {
-	if this.rawdata == nil {
+func (this *XMaps) Maps() *[]map[string]interface{} {
+	if this.RawData == nil {
 		return nil
 	}
-	data := []*map[string]interface{}{}
-	for i := 0; i < len(*this.rawdata); i++ {
-		data = append(data, (*this.rawdata)[i].RawData())
+	data := []map[string]interface{}{}
+	for i := 0; i < len(this.RawData); i++ {
+		data = append(data, *this.RawData[i].Map())
 	}
 	return &data
 }
 
-func (this *XDbDataArray) Length() int {
-	if this.rawdata == nil {
+func (this *XMaps) Length() int {
+	if this.RawData == nil {
 		return 0
 	}
-	return len(*this.rawdata)
+	return len(this.RawData)
 }
 
-func (this *XDbDataArray) Index(index int) *XDbData {
-	if this.rawdata == nil {
+func (this *XMaps) Index(index int) *XMap {
+	if this.RawData == nil {
 		return nil
 	}
 	if index < 0 {
 		return nil
 	}
-	if index >= len(*this.rawdata) {
+	if index >= len(this.RawData) {
 		return nil
 	}
-	return (*this.rawdata)[index]
+	return &this.RawData[index]
 }
 
-func (this *XDbDataArray) ForEach(cb func(*XDbData) bool) {
-	if this.rawdata == nil {
+func (this *XMaps) ForEach(cb func(*XMap) bool) {
+	if this.RawData == nil {
 		return
 	}
-	for i := 0; i < len(*this.rawdata); i++ {
-		if !cb((*this.rawdata)[i]) {
+	for i := 0; i < len(this.RawData); i++ {
+		if !cb(&this.RawData[i]) {
 			break
 		}
 	}
 }
 
-func (this *XDbData) map_field(field string) interface{} {
-	if this.rawdata == nil {
+func (this *XMap) map_field(field string) interface{} {
+	if this.RawData == nil {
 		return nil
 	}
-	return (*this.rawdata)[field]
+	return (this.RawData)[field]
 }
 
-func (this *XDbData) RawData() *map[string]interface{} {
-	return this.rawdata
+func (this *XMap) Map() *map[string]any {
+	return &this.RawData
 }
 
-func (this *XDbData) Int(field string) int {
+func (this *XMap) Int(field string) int {
 	data := this.map_field(field)
 	if data == nil {
 		return 0
@@ -288,7 +288,7 @@ func (this *XDbData) Int(field string) int {
 	return int(ToInt(data))
 }
 
-func (this *XDbData) Int32(field string) int32 {
+func (this *XMap) Int32(field string) int32 {
 	data := this.map_field(field)
 	if data == nil {
 		return 0
@@ -296,7 +296,7 @@ func (this *XDbData) Int32(field string) int32 {
 	return int32(ToInt(data))
 }
 
-func (this *XDbData) Int64(field string) int64 {
+func (this *XMap) Int64(field string) int64 {
 	data := this.map_field(field)
 	if data == nil {
 		return 0
@@ -304,7 +304,7 @@ func (this *XDbData) Int64(field string) int64 {
 	return int64(ToInt(data))
 }
 
-func (this *XDbData) Float32(field string) float32 {
+func (this *XMap) Float32(field string) float32 {
 	data := this.map_field(field)
 	if data == nil {
 		return 0
@@ -312,7 +312,7 @@ func (this *XDbData) Float32(field string) float32 {
 	return float32(ToFloat(data))
 }
 
-func (this *XDbData) Float64(field string) float64 {
+func (this *XMap) Float64(field string) float64 {
 	data := this.map_field(field)
 	if data == nil {
 		return 0
@@ -320,7 +320,7 @@ func (this *XDbData) Float64(field string) float64 {
 	return ToFloat(data)
 }
 
-func (this *XDbData) String(field string) string {
+func (this *XMap) String(field string) string {
 	data := this.map_field(field)
 	if data == nil {
 		return ""
@@ -328,7 +328,7 @@ func (this *XDbData) String(field string) string {
 	return ToString(data)
 }
 
-func (this *XDbData) Bytes(field string) []byte {
+func (this *XMap) Bytes(field string) []byte {
 	data := this.map_field(field)
 	if data == nil {
 		return []byte{}
@@ -336,11 +336,11 @@ func (this *XDbData) Bytes(field string) []byte {
 	return []byte(ToString(data))
 }
 
-func (this *XDbData) Delete(field string) {
-	if this.rawdata == nil {
+func (this *XMap) Delete(field string) {
+	if this.RawData == nil {
 		return
 	}
-	delete(*this.rawdata, field)
+	delete(this.RawData, field)
 }
 
 type XDbTable struct {
@@ -490,7 +490,7 @@ func (this *XDbTable) Or(field interface{}, value interface{}, ignorevalue inter
 	return this
 }
 
-func (this *XDbTable) First() (*XDbData, error) {
+func (this *XDbTable) First() (*XMap, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
 	}
@@ -546,7 +546,7 @@ func (this *XDbTable) Offset(offset int64) *XDbTable {
 	return this
 }
 
-func (this *XDbTable) Find() (*XDbDataArray, error) {
+func (this *XDbTable) Find() (*XMaps, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
 	}
@@ -776,7 +776,7 @@ func (this *XDbTable) Count(field string) (int64, error) {
 	return total.Int64("total"), nil
 }
 
-func (this *XDbTable) PageData(page int, pagesize int) (*XDbDataArray, error) {
+func (this *XDbTable) PageData(page int, pagesize int) (*XMaps, error) {
 	if page <= 0 {
 		page = 1
 	}

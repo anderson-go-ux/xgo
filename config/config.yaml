@@ -4,6 +4,9 @@ server:
   ipdata: ./config/ipdata.dat #qqwry数据文件地址
   http:
     port: 4034
+  rpc:
+    port: 7564 #prc监听端口
+    test: 127.0.0.1:7564
   db:
     host: 127.0.0.1
     port: 3306

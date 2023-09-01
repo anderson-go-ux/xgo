@@ -121,7 +121,7 @@ func auth_init(db *XDb, fullauth string) {
 	jbytes, _ := json.Marshal(&jdata)
 	authstr := string(jbytes)
 	sellers, err := thisdb.Table("x_seller").Find()
-	sellers.ForEach(func(xd *XDbData) bool {
+	sellers.ForEach(func(xd *XMap) bool {
 		SellerId := xd.Int("SellerId")
 		roledata, err := thisdb.Table("x_admin_role").Where("SellerId = ? and RoleName = '运营商超管'", SellerId, nil).First()
 		if err != nil {
@@ -153,7 +153,7 @@ func auth_init(db *XDb, fullauth string) {
 	super, err := thisdb.Table("x_admin_role").Where("SellerId = ? and RoleName = '超级管理员'", -1, nil).First()
 	if super.String("RoleData") != fullauth {
 		roles, _ := thisdb.Table("x_admin_role").Find()
-		roles.ForEach(func(xd *XDbData) bool {
+		roles.ForEach(func(xd *XMap) bool {
 			if xd.String("RoleName") == "超级管理员" {
 				return true
 			}
@@ -360,7 +360,7 @@ func user_logout(ctx *XHttpContent) {
 
 func get_seller_names(ctx *XHttpContent) {
 	sellers, _ := thisdb.Table("x_seller").Select("SellerId,SellerName").Find()
-	ctx.Put("data", sellers.RawData())
+	ctx.Put("data", sellers.Maps())
 	ctx.RespOK()
 }
 
@@ -377,7 +377,7 @@ func get_channel_names(ctx *XHttpContent) {
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.OrderBy("ChannelId asc")
 	channels, _ := table.Find()
-	ctx.Put("data", channels.RawData())
+	ctx.Put("data", channels.Maps())
 	ctx.RespOK()
 }
 
@@ -393,7 +393,7 @@ func get_role_names(ctx *XHttpContent) {
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.Select("RoleName")
 	roles, _ := table.Find()
-	ctx.Put("data", roles.RawData())
+	ctx.Put("data", roles.Maps())
 	ctx.RespOK()
 }
 
@@ -453,7 +453,7 @@ func get_channel(ctx *XHttpContent) {
 	table = table.Where("ChannelName = ?", reqdata.ChannelName, "")
 	total, _ := table.Count("")
 	channels, _ := table.Find()
-	ctx.Put("data", channels.RawData())
+	ctx.Put("data", channels.Maps())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
@@ -546,7 +546,7 @@ func get_role(ctx *XHttpContent) {
 	table = table.Where("RoleName = ?", reqdata.RoleName, "")
 	total, _ := table.Count("")
 	roles, _ := table.PageData(reqdata.Page, reqdata.PageSize)
-	ctx.Put("data", roles.RawData())
+	ctx.Put("data", roles.Maps())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
@@ -646,14 +646,14 @@ func get_admin_user(ctx *XHttpContent) {
 	table = table.Where("Account = ?", reqdata.Account, "")
 	total, _ := table.Count("")
 	users, _ := table.Select("*").PageData(reqdata.Page, reqdata.PageSize)
-	users.ForEach(func(xd *XDbData) bool {
+	users.ForEach(func(xd *XMap) bool {
 		xd.Delete("Token")
 		xd.Delete("Password")
 		xd.Delete("LoginGoogle")
 		xd.Delete("OptGoogle")
 		return true
 	})
-	ctx.Put("data", users.RawData())
+	ctx.Put("data", users.Maps())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
@@ -839,7 +839,7 @@ func get_login_log(ctx *XHttpContent) {
 	table = table.Where("CreateTime < ?", reqdata.EndTime, "")
 	total, _ := table.Count("")
 	data, _ := table.Select("*").PageData(reqdata.Page, reqdata.PageSize)
-	ctx.Put("data", data.RawData())
+	ctx.Put("data", data.Maps())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
@@ -876,7 +876,7 @@ func get_opt_log(ctx *XHttpContent) {
 	table = table.Where("CreateTime < ?", reqdata.EndTime, "")
 	total, _ := table.Count("")
 	data, _ := table.PageData(reqdata.Page, reqdata.PageSize)
-	ctx.Put("data", data.RawData())
+	ctx.Put("data", data.Maps())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
@@ -901,7 +901,7 @@ func get_system_config(ctx *XHttpContent) {
 	}
 	total, _ := table.Count("")
 	config, _ := table.Find()
-	ctx.Put("data", config.RawData())
+	ctx.Put("data", config.Maps())
 	ctx.Put("total", total)
 	ctx.RespOK()
 }
