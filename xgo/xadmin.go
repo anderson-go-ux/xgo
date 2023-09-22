@@ -111,7 +111,11 @@ func GetAdminToken(ctx *XHttpContent) *AdminTokenData {
 
 func auth_init(db *XDb, fullauth string) {
 	jdata := map[string]interface{}{}
-	json.Unmarshal([]byte(fullauth), &jdata)
+	err := json.Unmarshal([]byte(fullauth), &jdata)
+	if err != nil {
+		logs.Error("解析fullauth失败", err)
+		return
+	}
 	xitong := jdata["系统管理"].(map[string]interface{})
 	xitong["运营商管理"] = map[string]interface{}{"查:": 0, "增": 0, "删": 0, "改": 0}
 	if xitong["系统设置"] != nil {
