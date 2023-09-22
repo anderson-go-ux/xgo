@@ -224,10 +224,10 @@ BEGIN
 	DECLARE p_sellerid INT DEFAULT 0;
 	DECLARE p_Id INT DEFAULT 0;
 	DECLARE p_roledata text DEFAULT '{}';
-
+	
 	DECLARE cursor_seller CURSOR FOR SELECT SellerId FROM x_seller;
 	DECLARE cursor_role CURSOR FOR SELECT Id,RoleData FROM x_admin_role WHERE RoleName <> '超级管理员' AND RoleName <> '运营商超管';
-
+	
 	DECLARE CONTINUE HANDLER FOR NOT FOUND SET p_done = 1;
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
@@ -236,8 +236,8 @@ BEGIN
 		INSERT INTO x_error(FunName,ErrCode,ErrMsg)VALUES('x_init_auth',@errcode,@errmsg);
 		SELECT @errcode AS errcode,@errmsg AS errmsg;
 	END;
-
-	SET @fullauth =
+	
+	SET @fullauth = 
 	'{
 		"系统首页": { "查" : 1                              },
 		"系统管理": {
@@ -249,21 +249,21 @@ BEGIN
 			"操作日志":   { "查": 1                         }
 		}
 	}';
-
+	
 	IF NOT EXISTS(SELECT * FROM x_seller) THEN
 		INSERT INTO x_seller(SellerId,SellerName,Memo)VALUES(1,'初始运营商','自动生成');
 	END IF;
-
+	
 	IF NOT EXISTS(SELECT * FROM x_channel) THEN
 		INSERT INTO x_seller(SellerId,ChannelId,ChannelName,Memo)VALUES(1,2,'初始渠道','自动生成');
 	END IF;
-
+	
 	UPDATE x_admin_role SET RoleData = @fullauth WHERE RoleName = '超级管理员' OR RoleName = '运营商超管';
-
+	
 	IF NOT EXISTS(SELECT * FROM x_admin_role WHERE RoleName = '超级管理员') THEN
 		INSERT INTO x_admin_role(SellerId,Parent,RoleName,RoleData)VALUES(-1,'god','超级管理员',@fullauth);
 	END IF;
-
+	
 	OPEN cursor_seller;
     seller_loop: LOOP
 		SET p_done = 0;
@@ -274,13 +274,13 @@ BEGIN
 		IF NOT EXISTS(SELECT * FROM x_admin_role WHERE SellerId = p_sellerid AND RoleName = '运营商超管') THEN
 			INSERT INTO x_admin_role(SellerId,Parent,RoleName,RoleData)VALUES(p_sellerid,'god','运营商超管',@fullauth);
 		END IF;
-
+		
 		IF NOT EXISTS(SELECT * FROM x_admin_user WHERE SellerId = p_sellerid) THEN
 			INSERT INTO x_admin_user(SellerId,Account,`Password`,RoleName)VALUES(p_sellerid,CONCAT('admin',p_sellerid),MD5(MD5('admin')),'运营商超管');
 		END IF;
     END LOOP;
     CLOSE cursor_seller;
-
+	
 	SET @tmpauth = '{}';
 	SET @authkeys = JSON_KEYS(@fullauth);
 	SET @idx = 0;
@@ -298,7 +298,7 @@ BEGIN
 		END WHILE;
 		SET @idx = @idx + 1;
 	END WHILE;
-
+	
 	SET @finalauth = '{}';
 	SET @authkeys = JSON_KEYS(@tmpauth);
 	SET @idx = 0;
@@ -321,9 +321,9 @@ BEGIN
 		END IF;
 		SET @idx = @idx + 1;
 	END WHILE;
-
+	
 	SET @authkeys = JSON_KEYS(@finalauth);
-
+	
 	OPEN cursor_role;
     role_loop: LOOP
 		SET p_done = 0;
@@ -331,7 +331,7 @@ BEGIN
         IF p_done THEN
             LEAVE role_loop;
         END IF;
-
+	
 		SET @idx = 0;
 		WHILE @idx < JSON_LENGTH(@authkeys) DO
 			SET @keyname = JSON_EXTRACT(@authkeys, CONCAT('$[',@idx,']'));
