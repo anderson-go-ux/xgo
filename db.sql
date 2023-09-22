@@ -250,6 +250,14 @@ BEGIN
 		}
 	}';
 
+	IF NOT EXISTS(SELECT * FROM x_seller) THEN
+		INSERT INTO x_seller(SellerId,SellerName,Memo)VALUES(1,'初始运营商','自动生成');
+	END IF;
+
+	IF NOT EXISTS(SELECT * FROM x_channel) THEN
+		INSERT INTO x_seller(SellerId,ChannelId,ChannelName,Memo)VALUES(1,2,'初始渠道','自动生成');
+	END IF;
+
 	UPDATE x_admin_role SET RoleData = @fullauth WHERE RoleName = '超级管理员' OR RoleName = '运营商超管';
 
 	IF NOT EXISTS(SELECT * FROM x_admin_role WHERE RoleName = '超级管理员') THEN

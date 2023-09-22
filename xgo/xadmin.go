@@ -3,7 +3,6 @@ package xgo
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/beego/beego/logs"
@@ -21,6 +20,7 @@ type StructConfig struct {
 	ForClient   int
 	Memo        string
 }
+
 type AdminModifyConfigData struct {
 	SellerId int `validate:"required" `
 	Config   []StructConfig
@@ -48,26 +48,6 @@ func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
 	thishttp = http
 	thisdb = db
 	thisredis = redis
-	if env != "dev" {
-		data, _ := db.Table("x_seller").Select("count(*) as count").First()
-		count := data.Int("count")
-		if count == 0 {
-			db.Table("x_seller").Insert(H{
-				"SellerId":   1,
-				"SellerName": "初始运营商",
-			})
-		}
-		data, _ = db.Table("x_channel").Select("count(*) as count").First()
-		count = data.Int("count")
-		if count == 0 {
-			db.Table("x_channel").Insert(H{
-				"SellerId":    1,
-				"ChannelId":   1,
-				"ChannelName": "初始渠道",
-			})
-		}
-		auth_init(db, fullauth)
-	}
 
 	http.OnPostNoAuth("/sapi/user_login", user_login)
 	http.OnPostNoAuth("/sapi/user_logout", user_logout)
@@ -107,131 +87,6 @@ func GetAdminToken(ctx *XHttpContent) *AdminTokenData {
 		return nil
 	}
 	return &tokendata
-}
-
-func auth_init(db *XDb, fullauth string) {
-	jdata := map[string]interface{}{}
-	err := json.Unmarshal([]byte(fullauth), &jdata)
-	if err != nil {
-		logs.Error("解析fullauth失败", err)
-		return
-	}
-	xitong := jdata["系统管理"].(map[string]interface{})
-	xitong["运营商管理"] = map[string]interface{}{"查:": 0, "增": 0, "删": 0, "改": 0}
-	if xitong["系统设置"] != nil {
-		xitongsezhi := xitong["系统设置"].(map[string]interface{})
-		xitongsezhi["删"] = 0
-	}
-	jbytes, _ := json.Marshal(&jdata)
-	authstr := string(jbytes)
-	sellers, err := thisdb.Table("x_seller").Find()
-	sellers.ForEach(func(xd *XMap) bool {
-		SellerId := xd.Int("SellerId")
-		roledata, err := thisdb.Table("x_admin_role").Where("SellerId = ? and RoleName = '运营商超管'", SellerId, nil).First()
-		if err != nil {
-			if roledata == nil {
-				thisdb.Table("x_admin_role").Insert(H{
-					"SellerId": SellerId,
-					"Parent":   "god",
-					"RoleName": "运营商超管",
-					"RoleData": authstr,
-				})
-			}
-
-		}
-		userdata, err := thisdb.Table("x_admin_user").Where("SellerId = ?", SellerId, nil).First()
-		if err != nil {
-			if userdata == nil {
-				thisdb.Table("x_admin_user").Insert(H{
-					"SellerId": SellerId,
-					"Account":  fmt.Sprintf("admin%v", SellerId),
-					"Password": Md5(Md5("admin")),
-					"RoleName": "运营商超管",
-				})
-			}
-		}
-		return true
-	})
-	sql := "update x_admin_role set RoleData = ? where RoleName = ?"
-	db.conn().Exec(sql, authstr, "运营商超管")
-	super, err := thisdb.Table("x_admin_role").Where("SellerId = ? and RoleName = '超级管理员'", -1, nil).First()
-	if super.String("RoleData") != fullauth {
-		roles, _ := thisdb.Table("x_admin_role").Find()
-		roles.ForEach(func(xd *XMap) bool {
-			if xd.String("RoleName") == "超级管理员" {
-				return true
-			}
-			jnewdata := make(map[string]interface{})
-			json.Unmarshal([]byte(fullauth), &jnewdata)
-			clean_auth(jnewdata)
-			jrdata := make(map[string]interface{})
-			json.Unmarshal([]byte(xd.String("RoleData")), &jrdata)
-			for k, v := range jrdata {
-				set_auth(k, jnewdata, v.(map[string]interface{}))
-			}
-			newauthbyte, _ := json.Marshal(&jnewdata)
-			sql = "update x_admin_role set RoleData = ? where id = ?"
-			thisdb.Exec(sql, string(newauthbyte), xd.Int("Id"))
-			return true
-		})
-	}
-	if err != nil {
-		if super == nil {
-			thisdb.Table("x_admin_role").Insert(H{
-				"SellerId": -1,
-				"RoleName": "超级管理员",
-				"Parent":   "god",
-				"RoleData": fullauth,
-			})
-		}
-	} else {
-		sql = "update x_admin_role set RoleData = ? where RoleName = ?"
-		thisdb.Exec(sql, fullauth, "超级管理员")
-	}
-}
-
-func clean_auth(node map[string]interface{}) {
-	for k, v := range node {
-		if strings.Index(reflect.TypeOf(v).Name(), "float") >= 0 {
-			node[k] = 0
-		} else {
-			clean_auth(v.(map[string]interface{}))
-		}
-	}
-}
-
-func set_auth(parent string, newdata map[string]interface{}, node map[string]interface{}) {
-	for k, v := range node {
-		if strings.Index(reflect.TypeOf(v).Name(), "float") >= 0 {
-			if ToFloat(v) != 1 {
-				continue
-			}
-			path := strings.Split(parent, ".")
-			if len(path) == 0 {
-				continue
-			}
-			fk, fok := newdata[path[0]]
-			if !fok {
-				continue
-			}
-			var pn *interface{} = &fk
-			var finded bool = true
-			for i := 1; i < len(path); i++ {
-				tk := path[i]
-				tv, ok := (*pn).(map[string]interface{})[tk]
-				if !ok {
-					finded = false
-					break
-				}
-				pn = &tv
-			}
-			if finded {
-				(*pn).(map[string]interface{})[k] = 1
-			}
-		} else {
-			set_auth(parent+"."+k, newdata, v.(map[string]interface{}))
-		}
-	}
 }
 
 func user_login(ctx *XHttpContent) {
