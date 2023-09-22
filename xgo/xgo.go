@@ -16,6 +16,7 @@ import (
 	"net"
 	"net/rpc"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -365,13 +366,10 @@ func GetIpLocation(ip string) string {
 }
 
 func BackupDb(db *XDb, path string) {
-	if env != "dev" {
-		return
-	}
 	var strall string
 	var tables []string
-	data, _ := db.Query("SHOW FULL TABLES")
-	data.ForEach(func(xd *XMap) bool {
+	tabledata, _ := db.Query("SHOW FULL TABLES")
+	tabledata.ForEach(func(xd *XMap) bool {
 		for k, v := range *xd.Map() {
 			if strings.Index(k, "Tables_in_") >= 0 {
 				tables = append(tables, v.(string))
@@ -394,6 +392,8 @@ func BackupDb(db *XDb, path string) {
 					es = es[:eidx]
 					s = strings.Replace(s, es, "AUTO_INCREMENT=0 ", -1)
 				}
+				s = strings.Replace(s, "  ROW_", " ROW_", -1)
+				s = strings.Replace(s, "  ROW_", " ROW_", -1)
 				s += ";\r\n\r\n"
 				strall += s
 
@@ -401,6 +401,23 @@ func BackupDb(db *XDb, path string) {
 		}
 		return true
 	})
+	procdata, _ := db.Query(`SHOW PROCEDURE STATUS LIKE "%x_%"`)
+	procdata.ForEach(func(xd *XMap) bool {
+		if xd.String("Db") == db.database {
+			strall += fmt.Sprintf("DROP PROCEDURE IF EXISTS `%s`;\r\ndelimiter ;;\r\n", xd.String("Name"))
+			createdata, _ := db.Query(fmt.Sprintf("SHOW CREATE PROCEDURE %v", xd.String("Name")))
+			createsql := createdata.Index(0).String("Create Procedure")
+			re := regexp.MustCompile(" DEFINER=`[^`]+`@`[^`]+`")
+			matches := re.FindString(createsql)
+			if matches != "" {
+				createsql = strings.Replace(createsql, matches, "", -1)
+			}
+			strall += createsql
+			strall += "\r\n;;\r\ndelimiter ;\r\n\r\n"
+		}
+		return true
+	})
+
 	strall += "/*\r\n"
 	for i := 0; i < len(tables); i++ {
 		td, _ := db.Query(fmt.Sprintf("DESCRIBE %v", tables[i]))

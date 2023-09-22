@@ -30,6 +30,6 @@ func main() {
 	http.Init("server.http", redis)
 	http.InitWs("/api/ws")
 	xgo.AdminInit(http, db, redis, fullatuh)
-	xgo.BackupDb(db, "db.sql")
+	//xgo.BackupDb(db, "db.sql")
 	xgo.Run()
 }

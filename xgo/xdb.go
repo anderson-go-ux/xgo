@@ -59,6 +59,10 @@ func (this *XDb) conn() *sql.DB {
 	return this.db.DB()
 }
 
+func (this *XDb) Database() string {
+	return this.database
+}
+
 func (this *XDb) Begin() (*sql.Tx, error) {
 	return this.db.DB().Begin()
 }

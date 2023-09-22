@@ -1,5 +1,5 @@
 server:
-  env: devx
+  env: dev
   project: xgotest
   ipdata: ./config/ipdata.dat #qqwry数据文件地址
   http:
