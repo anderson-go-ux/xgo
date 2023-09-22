@@ -224,10 +224,10 @@ BEGIN
 	DECLARE p_sellerid INT DEFAULT 0;
 	DECLARE p_Id INT DEFAULT 0;
 	DECLARE p_roledata text DEFAULT '{}';
-	
+
 	DECLARE cursor_seller CURSOR FOR SELECT SellerId FROM x_seller;
 	DECLARE cursor_role CURSOR FOR SELECT Id,RoleData FROM x_admin_role WHERE RoleName <> '超级管理员' AND RoleName <> '运营商超管';
-	
+
 	DECLARE CONTINUE HANDLER FOR NOT FOUND SET p_done = 1;
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
@@ -236,8 +236,8 @@ BEGIN
 		INSERT INTO x_error(FunName,ErrCode,ErrMsg)VALUES('x_init_auth',@errcode,@errmsg);
 		SELECT @errcode AS errcode,@errmsg AS errmsg;
 	END;
-	
-	SET @fullauth = 
+
+	SET @fullauth =
 	'{
 		"系统首页": { "查" : 1                              },
 		"系统管理": {
@@ -249,13 +249,13 @@ BEGIN
 			"操作日志":   { "查": 1                         }
 		}
 	}';
-	
+
 	UPDATE x_admin_role SET RoleData = @fullauth WHERE RoleName = '超级管理员' OR RoleName = '运营商超管';
-	
+
 	IF NOT EXISTS(SELECT * FROM x_admin_role WHERE RoleName = '超级管理员') THEN
 		INSERT INTO x_admin_role(SellerId,Parent,RoleName,RoleData)VALUES(-1,'god','超级管理员',@fullauth);
 	END IF;
-	
+
 	OPEN cursor_seller;
     seller_loop: LOOP
 		SET p_done = 0;
@@ -266,13 +266,13 @@ BEGIN
 		IF NOT EXISTS(SELECT * FROM x_admin_role WHERE SellerId = p_sellerid AND RoleName = '运营商超管') THEN
 			INSERT INTO x_admin_role(SellerId,Parent,RoleName,RoleData)VALUES(p_sellerid,'god','运营商超管',@fullauth);
 		END IF;
-		
+
 		IF NOT EXISTS(SELECT * FROM x_admin_user WHERE SellerId = p_sellerid) THEN
 			INSERT INTO x_admin_user(SellerId,Account,`Password`,RoleName)VALUES(p_sellerid,CONCAT('admin',p_sellerid),MD5(MD5('admin')),'运营商超管');
 		END IF;
     END LOOP;
     CLOSE cursor_seller;
-	
+
 	SET @tmpauth = '{}';
 	SET @authkeys = JSON_KEYS(@fullauth);
 	SET @idx = 0;
@@ -290,7 +290,7 @@ BEGIN
 		END WHILE;
 		SET @idx = @idx + 1;
 	END WHILE;
-	
+
 	SET @finalauth = '{}';
 	SET @authkeys = JSON_KEYS(@tmpauth);
 	SET @idx = 0;
@@ -313,9 +313,9 @@ BEGIN
 		END IF;
 		SET @idx = @idx + 1;
 	END WHILE;
-	
+
 	SET @authkeys = JSON_KEYS(@finalauth);
-	
+
 	OPEN cursor_role;
     role_loop: LOOP
 		SET p_done = 0;
@@ -323,7 +323,7 @@ BEGIN
         IF p_done THEN
             LEAVE role_loop;
         END IF;
-	
+
 		SET @idx = 0;
 		WHILE @idx < JSON_LENGTH(@authkeys) DO
 			SET @keyname = JSON_EXTRACT(@authkeys, CONCAT('$[',@idx,']'));
@@ -342,159 +342,3 @@ END
 ;;
 delimiter ;
 
-/*
-type _muban struct {
-	Id int `gorm:"column:Id"`
-	SellerId int `gorm:"column:SellerId"`
-	ChannelId int `gorm:"column:ChannelId"`
-	UserId int `gorm:"column:UserId"`
-	CreateTime string `gorm:"column:CreateTime"`
-	Abc string `gorm:"column:Abc"`
-}
-
-type x_admin_login_log struct {
-	Id int `gorm:"column:Id"`
-	SellerId int `gorm:"column:SellerId"`
-	ChannelId int `gorm:"column:ChannelId"`
-	Account string `gorm:"column:Account"`
-	Token string `gorm:"column:Token"`
-	LoginIp string `gorm:"column:LoginIp"`
-	Memo string `gorm:"column:Memo"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type x_admin_opt_log struct {
-	Id int `gorm:"column:Id"`
-	SellerId int `gorm:"column:SellerId"`
-	ChannelId int `gorm:"column:ChannelId"`
-	Account string `gorm:"column:Account"`
-	OptName string `gorm:"column:OptName"`
-	ReqPath string `gorm:"column:ReqPath"`
-	ReqData string `gorm:"column:ReqData"`
-	Ip string `gorm:"column:Ip"`
-	Memo string `gorm:"column:Memo"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type x_admin_role struct {
-	Id int `gorm:"column:Id"`
-	SellerId int `gorm:"column:SellerId"`
-	RoleName string `gorm:"column:RoleName"`
-	Parent string `gorm:"column:Parent"`
-	RoleData string `gorm:"column:RoleData"`
-	State int `gorm:"column:State"`
-	Memo string `gorm:"column:Memo"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type x_admin_user struct {
-	Id int `gorm:"column:Id"`
-	SellerId int `gorm:"column:SellerId"`
-	ChannelId int `gorm:"column:ChannelId"`
-	Account string `gorm:"column:Account"`
-	Password string `gorm:"column:Password"`
-	RoleName string `gorm:"column:RoleName"`
-	LoginGoogle string `gorm:"column:LoginGoogle"`
-	OptGoogle string `gorm:"column:OptGoogle"`
-	State int `gorm:"column:State"`
-	Token string `gorm:"column:Token"`
-	LoginCount int `gorm:"column:LoginCount"`
-	LoginTime string `gorm:"column:LoginTime"`
-	LoginIp string `gorm:"column:LoginIp"`
-	Memo string `gorm:"column:Memo"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type x_agent struct {
-	Id int `gorm:"column:Id"`
-	SellerId int `gorm:"column:SellerId"`
-	ChannelId int `gorm:"column:ChannelId"`
-	UserId int `gorm:"column:UserId"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type x_agent_child struct {
-	Id int `gorm:"column:Id"`
-	SellerId int `gorm:"column:SellerId"`
-	ChannelId int `gorm:"column:ChannelId"`
-	UserId int `gorm:"column:UserId"`
-	ChildId int `gorm:"column:ChildId"`
-	ChildLevel int `gorm:"column:ChildLevel"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type x_channel struct {
-	Id int `gorm:"column:Id"`
-	SellerId int `gorm:"column:SellerId"`
-	ChannelId int `gorm:"column:ChannelId"`
-	State int `gorm:"column:State"`
-	ChannelName string `gorm:"column:ChannelName"`
-	Memo string `gorm:"column:Memo"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type x_config struct {
-	Id int `gorm:"column:Id"`
-	SellerId int `gorm:"column:SellerId"`
-	ChannelId int `gorm:"column:ChannelId"`
-	ConfigName string `gorm:"column:ConfigName"`
-	ConfigValue string `gorm:"column:ConfigValue"`
-	ForClient int `gorm:"column:ForClient"`
-	Memo string `gorm:"column:Memo"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type x_error struct {
-	Id int `gorm:"column:Id"`
-	FunName string `gorm:"column:FunName"`
-	ErrCode int `gorm:"column:ErrCode"`
-	ErrMsg string `gorm:"column:ErrMsg"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type x_seller struct {
-	Id int `gorm:"column:Id"`
-	SellerId int `gorm:"column:SellerId"`
-	State int `gorm:"column:State"`
-	SellerName string `gorm:"column:SellerName"`
-	Memo string `gorm:"column:Memo"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type x_user struct {
-	Id int `gorm:"column:Id"`
-	SellerId int `gorm:"column:SellerId"`
-	ChannelId int `gorm:"column:ChannelId"`
-	UserId int `gorm:"column:UserId"`
-	State int `gorm:"column:State"`
-	Account string `gorm:"column:Account"`
-	Password string `gorm:"column:Password"`
-	Token string `gorm:"column:Token"`
-	NickName string `gorm:"column:NickName"`
-	PhoneNum string `gorm:"column:PhoneNum"`
-	Email string `gorm:"column:Email"`
-	TopAgent int `gorm:"column:TopAgent"`
-	Agents string `gorm:"column:Agents"`
-	Agent int `gorm:"column:Agent"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type x_user_pool struct {
-	UserId int `gorm:"column:UserId"`
-	State int `gorm:"column:State"`
-	Ip string `gorm:"column:Ip"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-type x_user_score struct {
-	Id int `gorm:"column:Id"`
-	SellerId int `gorm:"column:SellerId"`
-	ChannelId int `gorm:"column:ChannelId"`
-	UserId int `gorm:"column:UserId"`
-	Symbol string `gorm:"column:Symbol"`
-	Amount float64 `gorm:"column:Amount"`
-	FrozenAmount float64 `gorm:"column:FrozenAmount"`
-	CreateTime string `gorm:"column:CreateTime"`
-}
-
-*/
