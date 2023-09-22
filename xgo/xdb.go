@@ -347,6 +347,13 @@ func (this *XMap) Delete(field string) {
 	delete(this.RawData, field)
 }
 
+func (this *XMap) Set(field string, value interface{}) {
+	if this.RawData == nil {
+		return
+	}
+	this.RawData[field] = value
+}
+
 type XDbTable struct {
 	db         *XDb
 	tx         *sql.Tx
