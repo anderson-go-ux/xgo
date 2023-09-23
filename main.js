@@ -40,11 +40,11 @@ setInterval(() => {
 	try {
 		for (let i = 0; i < filelist.length; i++) {
 			if (filelist[i].ctimeMs != fs.statSync(filelist[i].path).ctimeMs) {
-				fs.appendFileSync(`${project}.js`, ' ')
+				fs.writeFileSync(`reload.js`, `${new Date().getTime()}`)
 				break
 			}
 		}
 	} catch (e) {
-		fs.appendFileSync(`${project}.js`, ' ')
+		fs.writeFileSync(`reload.js`, `${new Date().getTime()}`)
 	}
 }, 200)
