@@ -37,10 +37,14 @@ child.stdout.on('data', function (data) {
 	process.stdout.write(data)
 })
 setInterval(() => {
-	for (let i = 0; i < filelist.length; i++) {
-		if (filelist[i].ctimeMs != fs.statSync(filelist[i].path).ctimeMs) {
-			fs.appendFileSync(`${project}.js`, ' ')
-			break
+	try {
+		for (let i = 0; i < filelist.length; i++) {
+			if (filelist[i].ctimeMs != fs.statSync(filelist[i].path).ctimeMs) {
+				fs.appendFileSync(`${project}.js`, ' ')
+				break
+			}
 		}
+	} catch (e) {
+		fs.appendFileSync(`${project}.js`, ' ')
 	}
 }, 200)
