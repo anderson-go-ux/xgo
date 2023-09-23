@@ -101,12 +101,6 @@ func user_login(ctx *XHttpContent) {
 	}
 
 	reqdata.Password = Md5(reqdata.Password)
-	type MenuData struct {
-		Icon  string     `json:"icon"`
-		Index string     `json:"index"`
-		Title string     `json:"title"`
-		Subs  []MenuData `json:"subs"`
-	}
 
 	if !thisredis.GetLock(fmt.Sprintf("lock:admin_login:%v", reqdata.Account), 10) {
 		ctx.RespErr("操作频繁,请稍后再试")
