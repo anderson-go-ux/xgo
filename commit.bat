@@ -1,5 +1,5 @@
 @echo off
-IF not  "%1"=="" (
+IF not "%1"=="" (
    echo > version.txt %1
 )
 git add *
