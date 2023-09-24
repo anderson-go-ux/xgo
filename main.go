@@ -31,5 +31,6 @@ func main() {
 	http.InitWs("/api/ws")
 	xgo.AdminInit(http, db, redis, fullatuh)
 	//xgo.BackupDb(db, "db.sql")
+	db.Table("x_user").Export("user.csv", "")
 	xgo.Run()
 }

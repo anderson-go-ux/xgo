@@ -1,5 +1,5 @@
 {
-  "dependencies": {
-    "nodemon": "^3.0.1"
-  }
+	"dependencies": {
+		"nodemon": "^3.0.1"
+	}
 }

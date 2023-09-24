@@ -842,3 +842,51 @@ func (this *XDbTable) PageData(page int, pagesize int) (*XMaps, error) {
 		return data, nil
 	}
 }
+
+func (this *XDbTable) Export(filename string, options string) error {
+	if options == "" {
+		sql := fmt.Sprintf("SELECT COLUMN_NAME  FROM INFORMATION_SCHEMA.COLUMNS  WHERE TABLE_SCHEMA = '%s'  AND TABLE_NAME = '%s'", this.db.database, this.tablename[0])
+		data, err := this.db.Query(sql)
+		if err != nil {
+			return err
+		}
+		if data.Length() == 0 {
+			return nil
+		}
+		obj := []map[string]interface{}{}
+		data.ForEach(func(row *XMap) bool {
+			field := row.String("COLUMN_NAME")
+			name := ""
+			values := []map[string]interface{}{}
+			if field == "SellerId" {
+				name = "运营商"
+				sellers, _ := this.db.Query("select SellerId,SellerName from x_seller")
+				sellers.ForEach(func(row *XMap) bool {
+					v := H{}
+					v[fmt.Sprint(row.String("SellerId"))] = row.String("SellerName")
+					values = append(values, v)
+					return true
+				})
+			}
+			if field == "ChannelId" {
+				name = "渠道"
+				channels, _ := this.db.Query("select ChannelId,ChannelName from x_channel")
+				channels.ForEach(func(row *XMap) bool {
+					v := H{}
+					v[fmt.Sprint(row.String("ChannelId"))] = row.String("ChannelName")
+					values = append(values, v)
+					return true
+				})
+			}
+			obj = append(obj, H{
+				"field":  field,
+				"name":   name,
+				"values": values,
+			})
+			return true
+		})
+		bytes, _ := json.Marshal(&obj)
+		fmt.Println(string(bytes))
+	}
+	return nil
+}
