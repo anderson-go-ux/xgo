@@ -858,14 +858,12 @@ func (this *XDbTable) Export(filename string, options string) string {
 		data.ForEach(func(row *XMap) bool {
 			field := row.String("COLUMN_NAME")
 			name := row.String("COLUMN_COMMENT")
-			values := []map[string]interface{}{}
+			values := map[string]interface{}{}
 			if field == "SellerId" {
 				name = "运营商"
 				sellers, _ := this.db.Query("select SellerId,SellerName from x_seller")
 				sellers.ForEach(func(row *XMap) bool {
-					v := H{}
-					v[fmt.Sprint(row.String("SellerId"))] = row.String("SellerName")
-					values = append(values, v)
+					values[fmt.Sprint(row.String("SellerId"))] = row.String("SellerName")
 					return true
 				})
 			}
@@ -873,9 +871,7 @@ func (this *XDbTable) Export(filename string, options string) string {
 				name = "渠道"
 				channels, _ := this.db.Query("select ChannelId,ChannelName from x_channel")
 				channels.ForEach(func(row *XMap) bool {
-					v := H{}
-					v[fmt.Sprint(row.String("ChannelId"))] = row.String("ChannelName")
-					values = append(values, v)
+					values[fmt.Sprint(row.String("ChannelId"))] = row.String("ChannelName")
 					return true
 				})
 			}
@@ -907,9 +903,26 @@ func (this *XDbTable) Export(filename string, options string) string {
 			columns = append(columns, jopt[i]["name"].(string))
 		}
 		excel.SetSheetRow("Sheet1", "A1", &columns)
-		tabledata, _ := this.Find()
-		fmt.Println(tabledata.Maps())
-
+		edata, _ := this.Find()
+		drow := 0
+		edata.ForEach(func(row *XMap) bool {
+			rowdata := []string{}
+			for i := 0; i < len(jopt); i++ {
+				bytes, _ := json.Marshal(jopt[i]["values"])
+				desc := map[string]interface{}{}
+				json.Unmarshal(bytes, &desc)
+				v := row.String(jopt[i]["field"].(string))
+				fv := desc[v]
+				if fv == nil {
+					rowdata = append(rowdata, v)
+				} else {
+					rowdata = append(rowdata, ToString(fv.(string)))
+				}
+			}
+			excel.SetSheetRow("Sheet1", fmt.Sprintf("A%d", drow+2), &rowdata)
+			drow++
+			return true
+		})
 		filename := filename + ".xlsx"
 		excel.SaveAs(filename)
 		return filename
