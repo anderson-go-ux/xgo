@@ -773,8 +773,10 @@ func (this *XDbTable) Delete() (int64, error) {
 }
 
 func (this *XDbTable) Count() (int64, error) {
+	str := this.selectstr
 	this.selectstr = "count(*) as total"
 	total, err := this.First()
+	this.selectstr = str
 	if err != nil {
 		return 0, err
 	}
@@ -814,14 +816,6 @@ func (this *XDbTable) PageData(page int, pagesize int) (*XMaps, error) {
 		}
 	}
 
-	if this.wherestr == "" {
-		this.groupopt = ""
-	}
-	wherestr := this.wheregroup + this.groupopt + this.wherestr
-	if wherestr != "" {
-		sql += " where "
-	}
-	sql += wherestr
 	if this.orderby != "" {
 		sql += " order by "
 		sql += this.orderby

@@ -349,6 +349,7 @@ func add_channel(ctx *XHttpContent) {
 	table := thisdb.Table("x_channel")
 	_, err := table.Insert(reqdata)
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -375,6 +376,7 @@ func modify_channel(ctx *XHttpContent) {
 	table = table.Where("ChannelId = ?", reqdata.ChannelId, nil)
 	_, err := table.Update(reqdata)
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -395,6 +397,7 @@ func delete_channel(ctx *XHttpContent) {
 	table = table.Where("ChannelId = ?", reqdata.ChannelId, nil)
 	_, err := table.Delete()
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -403,9 +406,9 @@ func delete_channel(ctx *XHttpContent) {
 
 func get_role(ctx *XHttpContent) {
 	type RequestData struct {
+		SellerId int `validate:"required"`
 		Page     int
 		PageSize int
-		SellerId int `validate:"required"`
 		RoleName string
 	}
 	reqdata := RequestData{}
@@ -413,15 +416,17 @@ func get_role(ctx *XHttpContent) {
 		return
 	}
 	table := thisdb.Table("x_admin_role").OrderBy("id desc")
-	table = table.Where("SellerId = ?", reqdata.SellerId, 0)
+	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.Where("RoleName = ?", reqdata.RoleName, "")
 	total, err := table.Count()
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
 	roles, err := table.PageData(reqdata.Page, reqdata.PageSize)
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -445,6 +450,7 @@ func add_role(ctx *XHttpContent) {
 	db := thisdb.Table("x_admin_role")
 	_, err := db.Insert(reqdata)
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -469,6 +475,7 @@ func modify_role(ctx *XHttpContent) {
 	table = table.Where("RoleName = ?", reqdata.RoleName, nil)
 	_, err := table.Update(reqdata)
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -489,6 +496,7 @@ func delete_role(ctx *XHttpContent) {
 	table = table.Where("RoleName = ?", reqdata.RoleName, nil)
 	_, err := table.Delete()
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -519,11 +527,13 @@ func get_admin_user(ctx *XHttpContent) {
 	table = table.Where("Account = ?", reqdata.Account, "")
 	total, err := table.Count()
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
 	users, err := table.Select("*").PageData(reqdata.Page, reqdata.PageSize)
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -556,6 +566,7 @@ func add_admin_user(ctx *XHttpContent) {
 	db := thisdb.Table("x_admin_user")
 	_, err := db.Insert(reqdata)
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -582,6 +593,7 @@ func modify_admin_user(ctx *XHttpContent) {
 	table = table.Where("Account = ?", reqdata.Account, nil)
 	_, err := table.Update(reqdata)
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -602,6 +614,7 @@ func delete_admin_user(ctx *XHttpContent) {
 	table = table.Where("Account = ?", reqdata.Account, nil)
 	_, err := table.Delete()
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -628,6 +641,7 @@ func modify_admin_user_google(ctx *XHttpContent) {
 
 	user, err := thisdb.Table("x_admin_user").Where("SellerId = ?", reqdata.SellerId, nil).Where("Account = ?", reqdata.Account, nil).First()
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -638,6 +652,7 @@ func modify_admin_user_google(ctx *XHttpContent) {
 
 	me, err := thisdb.Table("x_admin_user").Where("SellerId = ?", token.SellerId, nil).Where("Account = ?", token.Account, nil).First()
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -674,6 +689,7 @@ func modify_admin_user_google(ctx *XHttpContent) {
 	}
 	seller, err := thisdb.Table("x_seller").Where("SellerId = ?", reqdata.SellerId, nil).First()
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -726,11 +742,13 @@ func get_login_log(ctx *XHttpContent) {
 	table = table.Where("CreateTime < ?", reqdata.EndTime, "")
 	total, err := table.Count()
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
 	data, err := table.Select("*").PageData(reqdata.Page, reqdata.PageSize)
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -771,11 +789,13 @@ func get_opt_log(ctx *XHttpContent) {
 	table = table.Where("CreateTime < ?", reqdata.EndTime, "")
 	total, err := table.Count()
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
 	data, err := table.PageData(reqdata.Page, reqdata.PageSize)
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -798,17 +818,19 @@ func get_system_config(ctx *XHttpContent) {
 	table := thisdb.Table("x_config")
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.Where("ChannelId = ?", reqdata.ChannelId, -1)
-	table = table.Where("ConfigName in  ", reqdata.ConfigName, nil)
+	table = table.Where("ConfigName in ", reqdata.ConfigName)
 	if reqdata.Memo != "" {
 		table = table.Where("Memo like ?", fmt.Sprintf("%%%v%%", reqdata.Memo), nil)
 	}
 	total, err := table.Count()
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
 	config, err := table.Find()
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
@@ -835,6 +857,7 @@ func add_system_config(ctx *XHttpContent) {
 	}
 	_, err := thisdb.Table("x_config").Insert(reqdata)
 	if err != nil {
+		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
 		return
 	}
