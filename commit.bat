@@ -1,6 +1,6 @@
 @echo off
-IF not  "%1"=="" (
-   echo  %1>>version.txt
+IF not "%1"=="" (
+   echo  "%1" > version.txt
 )
 git add *
 git commit -m'auto'
