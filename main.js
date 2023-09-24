@@ -36,15 +36,19 @@ child.stderr.on('data', function (data) {
 child.stdout.on('data', function (data) {
 	process.stdout.write(data)
 })
+function rewrite(filename) {
+	let filedata = fs.readFileSync(filename, 'utf-8')
+	fs.writeFileSync(filename, filedata)
+}
 setInterval(() => {
 	try {
 		for (let i = 0; i < filelist.length; i++) {
 			if (filelist[i].ctimeMs != fs.statSync(filelist[i].path).ctimeMs) {
-				fs.writeFileSync(`reload.js`, `${new Date().getTime()}`)
+				rewrite(`${project}.js`)
 				break
 			}
 		}
 	} catch (e) {
-		fs.writeFileSync(`reload.js`, `${new Date().getTime()}`)
+		rewrite(`${project}.js`)
 	}
 }, 200)
