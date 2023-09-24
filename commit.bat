@@ -1,6 +1,10 @@
 @echo off
 IF not "%1"=="" (
-   echo  %~1 > version.txt
+    setlocal enabledelayedexpansion
+    set "param=%~1"
+    :trimLeading
+    if "!param:~0,1!"==" " set "param=!param:~1!" & goto :trimLeading
+    echo !param! > version.txt
 )
 git add *
 git commit -m'auto'
