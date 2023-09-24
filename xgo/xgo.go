@@ -5,10 +5,7 @@ import (
 	"bytes"
 	"crypto/cipher"
 	"crypto/des"
-	"crypto/hmac"
 	"crypto/md5"
-	"crypto/sha1"
-	"encoding/base32"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -22,11 +19,11 @@ import (
 	"time"
 	"unicode"
 
-	crand "crypto/rand"
 	mrand "math/rand"
 
 	"github.com/beego/beego/logs"
 	"github.com/gin-gonic/gin"
+	"github.com/pquerna/otp/totp"
 	"github.com/spf13/viper"
 	"github.com/yinheli/qqwry"
 )
@@ -189,63 +186,16 @@ func ToFloat(v interface{}) float64 {
 	return 0
 }
 
-func onetimepassword(key []byte, value []byte) uint32 {
-	hmacSha1 := hmac.New(sha1.New, key)
-	hmacSha1.Write(value)
-	hash := hmacSha1.Sum(nil)
-	offset := hash[len(hash)-1] & 0x0F
-	hashParts := hash[offset : offset+4]
-	hashParts[0] = hashParts[0] & 0x7F
-	number := touint32(hashParts)
-	pwd := number % 1000000
-	return pwd
-}
-
-func touint32(bytes []byte) uint32 {
-	return (uint32(bytes[0]) << 24) + (uint32(bytes[1]) << 16) +
-		(uint32(bytes[2]) << 8) + uint32(bytes[3])
-}
-
-func tobytes(value int64) []byte {
-	var result []byte
-	mask := int64(0xFF)
-	shifts := [8]uint16{56, 48, 40, 32, 24, 16, 8, 0}
-	for _, shift := range shifts {
-		result = append(result, byte((value>>shift)&mask))
-	}
-	return result
-}
-
-func GetGoogleCode(secret string) int32 {
-	key, err := base32.StdEncoding.DecodeString(secret)
-	if err != nil {
-		logs.Error(err)
-		return 0
-	}
-	epochSeconds := time.Now().Unix() + 0
-	return int32(onetimepassword(key, tobytes(epochSeconds/30)))
-}
-
 func VerifyGoogleCode(secret string, code string) bool {
-	nowcode := GetGoogleCode(secret)
-	if fmt.Sprint(nowcode) == code {
-		return true
-	}
-	return false
+	return totp.Validate(code, secret)
 }
 
-func googlerandstr(strSize int) string {
-	dictionary := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	var bytes = make([]byte, strSize)
-	_, _ = crand.Read(bytes)
-	for k, v := range bytes {
-		bytes[k] = dictionary[v%byte(len(dictionary))]
-	}
-	return string(bytes)
-}
-
-func NewGoogleSecret() string {
-	return strings.ToUpper(googlerandstr(32))
+func NewGoogleSecret(Issuer string, AccountName string) (string, string) {
+	key, _ := totp.Generate(totp.GenerateOpts{
+		Issuer:      Issuer,
+		AccountName: AccountName,
+	})
+	return key.Secret(), key.URL()
 }
 
 func ReadAllText(path string) string {

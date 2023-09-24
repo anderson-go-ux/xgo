@@ -591,7 +591,11 @@ func modify_admin_user(ctx *XHttpContent) {
 	table := thisdb.Table("x_admin_user")
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.Where("Account = ?", reqdata.Account, nil)
-	_, err := table.Update(reqdata)
+	jdata := ObjectToMap(reqdata)
+	if reqdata.Password == "" {
+		delete(*jdata, "Password")
+	}
+	_, err := table.Update(jdata)
 	if err != nil {
 		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
@@ -698,14 +702,12 @@ func modify_admin_user_google(ctx *XHttpContent) {
 		return
 	}
 	if reqdata.CodeType == 1 {
-		verifykey := NewGoogleSecret()
-		verifyurl := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=%s-登录", reqdata.Account, verifykey, seller.String("SellerName"))
+		verifykey, verifyurl := NewGoogleSecret(fmt.Sprintf("%s-登录", seller.String("SellerName")), reqdata.Account)
 		thisdb.Exec("update x_admin_user set LoginGoogle = ? where Id = ?", verifykey, user.Int("Id"))
 		ctx.Put("url", verifyurl)
 		ctx.RespOK()
 	} else if reqdata.CodeType == 2 {
-		verifykey := NewGoogleSecret()
-		verifyurl := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=%s-操作", reqdata.Account, verifykey, seller.String("SellerName"))
+		verifykey, verifyurl := NewGoogleSecret(fmt.Sprintf("%s-操作", seller.String("SellerName")), reqdata.Account)
 		thisdb.Exec("update x_admin_user set OptGoogle = ? where Id = ?", verifykey, user.Int("Id"))
 		ctx.Put("url", verifyurl)
 		ctx.RespOK()

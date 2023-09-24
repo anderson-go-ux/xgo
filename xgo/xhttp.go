@@ -251,18 +251,18 @@ func (this *XHttp) OnPostWithAuth(path string, handler XHttpHandler, auth string
 		if googleverify {
 			gc, ok := jbody["GoogleCode"]
 			if !ok {
-				ctx.RespErr(8, "请填写谷歌验证码")
+				ctx.RespErr(8, "请填写验证码")
 				return
 			}
 			gcstr := ToString(gc)
 			if len(gcstr) == 0 {
-				ctx.RespErr(8, "请填写谷歌验证码")
+				ctx.RespErr(8, "请填写验证码")
 				return
 			}
 			if strings.Index(env, "prd") > 0 {
 				gsstr := ToString(jtoken["GoogleSecret"])
 				if !VerifyGoogleCode(gsstr, gcstr) {
-					ctx.RespErr(9, "谷歌验证码不正确")
+					ctx.RespErr(9, "验证码不正确")
 					return
 				}
 			}
