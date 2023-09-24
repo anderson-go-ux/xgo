@@ -772,15 +772,9 @@ func (this *XDbTable) Delete() (int64, error) {
 	}
 }
 
-func (this *XDbTable) Count(field string) (int64, error) {
-	str := this.selectstr
-	if field == "" {
-		this.selectstr = "count(*) as total"
-	} else {
-		this.selectstr = fmt.Sprintf("count(%v) as total", field)
-	}
+func (this *XDbTable) Count() (int64, error) {
+	this.selectstr = "count(*) as total"
 	total, err := this.First()
-	this.selectstr = str
 	if err != nil {
 		return 0, err
 	}
