@@ -912,6 +912,14 @@ func (this *XDbTable) Export(filename string, options string) string {
 				desc := map[string]interface{}{}
 				json.Unmarshal(bytes, &desc)
 				v := row.String(jopt[i]["field"].(string))
+				if jopt[i]["time"] != nil {
+					v = UtcToLocalTime(v)
+				}
+				if jopt[i]["date"] != nil {
+					v = UtcToLocalTime(v)
+					tm := LocalTimeToTimeStamp(v)
+					v = TimeStampToLocalDate(tm)
+				}
 				fv := desc[v]
 				if fv == nil {
 					rowdata = append(rowdata, v)
