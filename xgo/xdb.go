@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
+	"github.com/xuri/excelize/v2"
 )
 
 type XDb struct {
@@ -416,7 +418,7 @@ func (this *XDbTable) Where(field interface{}, value ...interface{}) *XDbTable {
 		}
 		if !ok {
 			this.wherestr += fmt.Sprintf("(%v)", field)
-			this.wheredata = append(this.wheredata, value)
+			this.wheredata = append(this.wheredata, value...)
 		} else {
 			v := "("
 			for i := 0; i < len(arrdata); i++ {
@@ -583,7 +585,6 @@ func (this *XDbTable) Find() (*XMaps, error) {
 			sql += " union "
 		}
 	}
-
 	if this.orderby != "" {
 		sql += " order by "
 		sql += this.orderby
@@ -843,20 +844,20 @@ func (this *XDbTable) PageData(page int, pagesize int) (*XMaps, error) {
 	}
 }
 
-func (this *XDbTable) Export(filename string, options string) error {
+func (this *XDbTable) Export(filename string, options string) string {
 	if options == "" {
-		sql := fmt.Sprintf("SELECT COLUMN_NAME  FROM INFORMATION_SCHEMA.COLUMNS  WHERE TABLE_SCHEMA = '%s'  AND TABLE_NAME = '%s'", this.db.database, this.tablename[0])
+		sql := fmt.Sprintf("SELECT COLUMN_NAME,COLUMN_COMMENT FROM INFORMATION_SCHEMA.COLUMNS  WHERE TABLE_SCHEMA = '%s'  AND TABLE_NAME = '%s'", this.db.database, this.tablename[0])
 		data, err := this.db.Query(sql)
 		if err != nil {
-			return err
+			return ""
 		}
 		if data.Length() == 0 {
-			return nil
+			return ""
 		}
 		obj := []map[string]interface{}{}
 		data.ForEach(func(row *XMap) bool {
 			field := row.String("COLUMN_NAME")
-			name := ""
+			name := row.String("COLUMN_COMMENT")
 			values := []map[string]interface{}{}
 			if field == "SellerId" {
 				name = "运营商"
@@ -878,6 +879,12 @@ func (this *XDbTable) Export(filename string, options string) error {
 					return true
 				})
 			}
+			if field == "Id" {
+				name = "Id"
+			}
+			if name == "" {
+				name = field
+			}
 			obj = append(obj, H{
 				"field":  field,
 				"name":   name,
@@ -885,8 +892,26 @@ func (this *XDbTable) Export(filename string, options string) error {
 			})
 			return true
 		})
-		bytes, _ := json.Marshal(&obj)
-		fmt.Println(string(bytes))
+
+		bytes, _ := json.MarshalIndent(&obj, "", "    ")
+		file, _ := os.Create("zexport.json")
+		defer file.Close()
+		file.WriteString(string(bytes))
+		return ""
+	} else {
+		excel := excelize.NewFile()
+		jopt := []map[string]interface{}{}
+		json.Unmarshal([]byte(options), &jopt)
+		columns := []string{}
+		for i := 0; i < len(jopt); i++ {
+			columns = append(columns, jopt[i]["name"].(string))
+		}
+		excel.SetSheetRow("Sheet1", "A1", &columns)
+		tabledata, _ := this.Find()
+		fmt.Println(tabledata.Maps())
+
+		filename := filename + ".xlsx"
+		excel.SaveAs(filename)
+		return filename
 	}
-	return nil
 }

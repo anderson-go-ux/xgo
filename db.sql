@@ -224,9 +224,11 @@ BEGIN
 	DECLARE p_sellerid INT DEFAULT 0;
 	DECLARE p_Id INT DEFAULT 0;
 	DECLARE p_roledata text DEFAULT '{}';
+	DECLARE p_tablename VARCHAR(255);
 	
 	DECLARE cursor_seller CURSOR FOR SELECT SellerId FROM x_seller;
 	DECLARE cursor_role CURSOR FOR SELECT Id,RoleData FROM x_admin_role WHERE RoleName <> '超级管理员' AND RoleName <> '运营商超管';
+	DECLARE cursor_table CURSOR FOR SELECT DISTINCT TABLE_NAME   FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE();
 	
 	DECLARE CONTINUE HANDLER FOR NOT FOUND SET p_done = 1;
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -346,6 +348,43 @@ BEGIN
 		UPDATE x_admin_role SET RoleData = p_roledata where Id = p_Id;
     END LOOP;
     CLOSE cursor_role;
+	
+	OPEN cursor_table;
+    table_loop: LOOP
+		SET p_done = 0;
+        FETCH cursor_table INTO p_tablename;
+        IF p_done THEN
+            LEAVE table_loop;
+        END IF;
+		
+		IF p_tablename <> 'x_error' AND p_tablename <> 'x_user_pool' THEN
+			IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = p_tablename AND COLUMN_NAME = 'SellerId' AND TABLE_SCHEMA = DATABASE()) THEN
+				SELECT CONCAT(p_tablename, ' is missing SellerId') AS 'Warning';
+				LEAVE table_loop;
+			END IF;
+		END IF;
+		
+		IF p_tablename <> 'x_admin_role' AND  p_tablename <> 'x_error' AND  p_tablename <> 'x_seller' AND p_tablename <> 'x_user_pool' THEN
+			IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS  WHERE TABLE_NAME = p_tablename AND COLUMN_NAME = 'ChannelId' AND TABLE_SCHEMA = DATABASE()) THEN
+				SELECT CONCAT(p_tablename, ' is missing ChannelId') AS 'Warning';
+				LEAVE table_loop;
+			END IF;
+		END IF;
+    END LOOP;
+    CLOSE cursor_table;	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 END
 ;;
 delimiter ;
