@@ -445,7 +445,7 @@ func StrContainsDigit(str string) bool {
 	return false
 }
 
-func Export(filename string, edata *XMaps, options string) {
+func Export(filename string, edata *XMaps, options string) string {
 	excel := excelize.NewFile()
 	jopt := []map[string]interface{}{}
 	json.Unmarshal([]byte(options), &jopt)
@@ -483,4 +483,5 @@ func Export(filename string, edata *XMaps, options string) {
 	})
 	filename = filename + ".xlsx"
 	excel.SaveAs(filename)
+	return filename
 }
