@@ -40,6 +40,5 @@ func main() {
 	// 	redis.Set("test", data, 0)
 	// 	return &data, nil
 	// })
-	// fmt.Println("fffffff", x)
 	xgo.Run()
 }
