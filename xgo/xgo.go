@@ -25,6 +25,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp/totp"
 	"github.com/spf13/viper"
+	"github.com/xuri/excelize/v2"
 	"github.com/yinheli/qqwry"
 )
 
@@ -442,4 +443,44 @@ func StrContainsDigit(str string) bool {
 		}
 	}
 	return false
+}
+
+func Export(filename string, edata *XMaps, options string) {
+	excel := excelize.NewFile()
+	jopt := []map[string]interface{}{}
+	json.Unmarshal([]byte(options), &jopt)
+	columns := []string{}
+	for i := 0; i < len(jopt); i++ {
+		columns = append(columns, jopt[i]["name"].(string))
+	}
+	excel.SetSheetRow("Sheet1", "A1", &columns)
+	drow := 0
+	edata.ForEach(func(row *XMap) bool {
+		rowdata := []string{}
+		for i := 0; i < len(jopt); i++ {
+			bytes, _ := json.Marshal(jopt[i]["values"])
+			desc := map[string]interface{}{}
+			json.Unmarshal(bytes, &desc)
+			v := row.String(jopt[i]["field"].(string))
+			if jopt[i]["time"] != nil {
+				v = UtcToLocalTime(v)
+			}
+			if jopt[i]["date"] != nil {
+				v = UtcToLocalTime(v)
+				tm := LocalTimeToTimeStamp(v)
+				v = TimeStampToLocalDate(tm)
+			}
+			fv := desc[v]
+			if fv == nil {
+				rowdata = append(rowdata, v)
+			} else {
+				rowdata = append(rowdata, ToString(fv.(string)))
+			}
+		}
+		excel.SetSheetRow("Sheet1", fmt.Sprintf("A%d", drow+2), &rowdata)
+		drow++
+		return true
+	})
+	filename = filename + ".xlsx"
+	excel.SaveAs(filename)
 }

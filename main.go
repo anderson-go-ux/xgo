@@ -33,7 +33,8 @@ func main() {
 	//xgo.BackupDb(db, "db.sql")
 	//opt := `[{"field":"Id","name":"Id","values":{}},{"field":"SellerId","name":"运营商","values":{"1":"初始运营商"}},{"field":"ChannelId","name":"渠道","values":{"1":"初始渠道"}},{"field":"UserId","name":"UserId","values":{}},{"field":"State","name":"状态","values":{"1":"启用","2":"禁用"}},{"field":"Account","name":"账号","values":{}},{"field":"Token","name":"最后登录token","values":{}},{"field":"NickName","name":"昵称","values":{}},{"field":"PhoneNum","name":"电话号码","values":{}},{"field":"Email","name":"Email地址","values":{}},{"field":"TopAgent","name":"顶级代理","values":{}},{"field":"Agents","name":"代理","values":{}},{"field":"Agent","name":"上级代理","values":{}},{"field":"CreateTime","name":"创建时间","values":{},"date":1}]`
 	//opt = ""
-	//db.Table("x_user").OrderBy("id desc").Export("user1", opt)
+	//data, _ := db.Table("x_user").Find()
+	//xgo.Export("fuck", data, opt)
 	// x, _ := redis.GetCacheInts("test", func() (*[]int64, error) {
 	// 	data := []int64{1, 2, 3}
 	// 	redis.Set("test", data, 0)

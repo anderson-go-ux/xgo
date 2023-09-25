@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -14,7 +13,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
-	"github.com/xuri/excelize/v2"
 )
 
 type XDb struct {
@@ -844,95 +842,50 @@ func (this *XDbTable) PageData(page int, pagesize int) (*XMaps, error) {
 	}
 }
 
-func (this *XDbTable) Export(filename string, options string) string {
-	if options == "" {
-		sql := fmt.Sprintf("SELECT COLUMN_NAME,COLUMN_COMMENT FROM INFORMATION_SCHEMA.COLUMNS  WHERE TABLE_SCHEMA = '%s'  AND TABLE_NAME = '%s'", this.db.database, this.tablename[0])
-		data, err := this.db.Query(sql)
-		if err != nil {
-			return ""
-		}
-		if data.Length() == 0 {
-			return ""
-		}
-		obj := []map[string]interface{}{}
-		data.ForEach(func(row *XMap) bool {
-			field := row.String("COLUMN_NAME")
-			name := row.String("COLUMN_COMMENT")
-			values := map[string]interface{}{}
-			if field == "SellerId" {
-				name = "运营商"
-				sellers, _ := this.db.Query("select SellerId,SellerName from x_seller")
-				sellers.ForEach(func(row *XMap) bool {
-					values[fmt.Sprint(row.String("SellerId"))] = row.String("SellerName")
-					return true
-				})
-			}
-			if field == "ChannelId" {
-				name = "渠道"
-				channels, _ := this.db.Query("select ChannelId,ChannelName from x_channel")
-				channels.ForEach(func(row *XMap) bool {
-					values[fmt.Sprint(row.String("ChannelId"))] = row.String("ChannelName")
-					return true
-				})
-			}
-			if field == "Id" {
-				name = "Id"
-			}
-			if name == "" {
-				name = field
-			}
-			obj = append(obj, H{
-				"field":  field,
-				"name":   name,
-				"values": values,
-			})
-			return true
-		})
-
-		bytes, _ := json.MarshalIndent(&obj, "", "    ")
-		file, _ := os.Create("zexport.json")
-		defer file.Close()
-		file.WriteString(string(bytes))
+func (this *XDbTable) GetExportOptions() string {
+	sql := fmt.Sprintf("SELECT COLUMN_NAME,COLUMN_COMMENT FROM INFORMATION_SCHEMA.COLUMNS  WHERE TABLE_SCHEMA = '%s'  AND TABLE_NAME = '%s'", this.db.database, this.tablename[0])
+	data, err := this.db.Query(sql)
+	if err != nil {
 		return ""
-	} else {
-		excel := excelize.NewFile()
-		jopt := []map[string]interface{}{}
-		json.Unmarshal([]byte(options), &jopt)
-		columns := []string{}
-		for i := 0; i < len(jopt); i++ {
-			columns = append(columns, jopt[i]["name"].(string))
-		}
-		excel.SetSheetRow("Sheet1", "A1", &columns)
-		edata, _ := this.Find()
-		drow := 0
-		edata.ForEach(func(row *XMap) bool {
-			rowdata := []string{}
-			for i := 0; i < len(jopt); i++ {
-				bytes, _ := json.Marshal(jopt[i]["values"])
-				desc := map[string]interface{}{}
-				json.Unmarshal(bytes, &desc)
-				v := row.String(jopt[i]["field"].(string))
-				if jopt[i]["time"] != nil {
-					v = UtcToLocalTime(v)
-				}
-				if jopt[i]["date"] != nil {
-					v = UtcToLocalTime(v)
-					tm := LocalTimeToTimeStamp(v)
-					v = TimeStampToLocalDate(tm)
-				}
-				fv := desc[v]
-				if fv == nil {
-					rowdata = append(rowdata, v)
-				} else {
-					rowdata = append(rowdata, ToString(fv.(string)))
-				}
-			}
-			excel.SetSheetRow("Sheet1", fmt.Sprintf("A%d", drow+2), &rowdata)
-			drow++
-			return true
-		})
-		filename := filename + ".xlsx"
-		excel.SaveAs(filename)
-		return filename
 	}
+	if data.Length() == 0 {
+		return ""
+	}
+	obj := []map[string]interface{}{}
+	data.ForEach(func(row *XMap) bool {
+		field := row.String("COLUMN_NAME")
+		name := row.String("COLUMN_COMMENT")
+		values := map[string]interface{}{}
+		if field == "SellerId" {
+			name = "运营商"
+			sellers, _ := this.db.Query("select SellerId,SellerName from x_seller")
+			sellers.ForEach(func(row *XMap) bool {
+				values[fmt.Sprint(row.String("SellerId"))] = row.String("SellerName")
+				return true
+			})
+		}
+		if field == "ChannelId" {
+			name = "渠道"
+			channels, _ := this.db.Query("select ChannelId,ChannelName from x_channel")
+			channels.ForEach(func(row *XMap) bool {
+				values[fmt.Sprint(row.String("ChannelId"))] = row.String("ChannelName")
+				return true
+			})
+		}
+		if field == "Id" {
+			name = "Id"
+		}
+		if name == "" {
+			name = field
+		}
+		obj = append(obj, H{
+			"field":  field,
+			"name":   name,
+			"values": values,
+		})
+		return true
+	})
+
+	bytes, _ := json.MarshalIndent(&obj, "", "    ")
+	return string(bytes)
 }
