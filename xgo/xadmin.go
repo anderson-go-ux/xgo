@@ -90,12 +90,12 @@ func GetAdminToken(ctx *XHttpContent) *AdminTokenData {
 }
 
 func user_login(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		Account    string `validate:"required"`
 		Password   string `validate:"required"`
 		GoogleCode string `validate:"required"`
-	}
-	reqdata := RequestData{}
+	}{}
+
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -196,10 +196,9 @@ func user_login(ctx *XHttpContent) {
 }
 
 func user_logout(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		Token string
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -219,10 +218,9 @@ func get_seller_names(ctx *XHttpContent) {
 }
 
 func get_channel_names(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId int `validate:"required"`
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -239,10 +237,9 @@ func get_channel_names(ctx *XHttpContent) {
 }
 
 func get_role_names(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId int `validate:"required"`
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -259,11 +256,10 @@ func get_role_names(ctx *XHttpContent) {
 }
 
 func get_role_data(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId int    `validate:"required"`
 		RoleName string `validate:"required"`
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -299,14 +295,13 @@ func get_role_data(ctx *XHttpContent) {
 }
 
 func get_channel(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		Page        int    `gorm:"-"`
 		PageSize    int    `gorm:"-"`
 		SellerId    int    `gorm:"column:SellerId"`
 		ChannelId   int    `gorm:"column:ChannelId"`
 		ChannelName string `gorm:"column:ChannelName"`
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -336,13 +331,12 @@ func get_channel(ctx *XHttpContent) {
 }
 
 func add_channel(ctx *XHttpContent) {
-	type RequestData struct {
-		SellerId    int    `validate:"required" gorm:"column:SellerId"`
-		ChannelId   int    `validate:"required" gorm:"column:ChannelId"`
-		ChannelName string `validate:"required" gorm:"column:ChannelName"`
-		Memo        string `gorm:"column:Memo"`
-	}
-	reqdata := RequestData{}
+	reqdata := struct {
+		SellerId    int    `validate:"required"`
+		ChannelId   int    `validate:"required"`
+		ChannelName string `validate:"required"`
+		Memo        string
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -360,14 +354,13 @@ func add_channel(ctx *XHttpContent) {
 }
 
 func modify_channel(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId    int `validate:"required"`
 		ChannelId   int `validate:"required"`
 		ChannelName string
 		State       int
 		Memo        string
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -384,11 +377,10 @@ func modify_channel(ctx *XHttpContent) {
 }
 
 func delete_channel(ctx *XHttpContent) {
-	type RequestData struct {
-		SellerId  int `validate:"required" gorm:"column:SellerId"`
-		ChannelId int `validate:"required" gorm:"column:ChannelId"`
-	}
-	reqdata := RequestData{}
+	reqdata := struct {
+		SellerId  int `validate:"required"`
+		ChannelId int `validate:"required"`
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -405,13 +397,12 @@ func delete_channel(ctx *XHttpContent) {
 }
 
 func get_role(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId int `validate:"required"`
 		Page     int
 		PageSize int
 		RoleName string
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -436,14 +427,13 @@ func get_role(ctx *XHttpContent) {
 }
 
 func add_role(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId int    `validate:"required"`
 		RoleName string `validate:"required"`
 		Parent   string `validate:"required"`
 		RoleData string `validate:"required"`
 		Memo     string
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -458,15 +448,14 @@ func add_role(ctx *XHttpContent) {
 }
 
 func modify_role(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId int    `validate:"required"`
 		RoleName string `validate:"required"`
 		Parent   string `validate:"required"`
 		RoleData string
 		State    int
 		Memo     string
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -483,11 +472,10 @@ func modify_role(ctx *XHttpContent) {
 }
 
 func delete_role(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId int    `validate:"required"`
 		RoleName string `validate:"required"`
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -504,14 +492,13 @@ func delete_role(ctx *XHttpContent) {
 }
 
 func get_admin_user(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		Page      int
 		PageSize  int
 		SellerId  int `validate:"required"`
 		ChannelId int
 		Account   string
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -550,15 +537,14 @@ func get_admin_user(ctx *XHttpContent) {
 }
 
 func add_admin_user(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId  int `validate:"required"`
 		ChannelId int
 		Account   string `validate:"required"`
 		Password  string `validate:"required"`
 		RoleName  string `validate:"required"`
 		Memo      string
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -574,14 +560,13 @@ func add_admin_user(ctx *XHttpContent) {
 }
 
 func modify_admin_user(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId int    `validate:"required"`
 		Account  string `validate:"required"`
 		Password string
 		State    int
 		Memo     string
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -605,11 +590,10 @@ func modify_admin_user(ctx *XHttpContent) {
 }
 
 func delete_admin_user(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId int    `validate:"required"`
 		Account  string `validate:"required"`
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -626,13 +610,12 @@ func delete_admin_user(ctx *XHttpContent) {
 }
 
 func modify_admin_user_google(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId   int    `validate:"required"`
 		Account    string `validate:"required"`
 		CodeType   int    `validate:"required"`
 		GoogleCode string `validate:"required"`
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -715,7 +698,7 @@ func modify_admin_user_google(ctx *XHttpContent) {
 }
 
 func get_login_log(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		Page      int
 		PageSize  int
 		SellerId  int `validate:"required" `
@@ -724,8 +707,7 @@ func get_login_log(ctx *XHttpContent) {
 		LoginIp   string
 		StartTime string
 		EndTime   string
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -760,7 +742,7 @@ func get_login_log(ctx *XHttpContent) {
 }
 
 func get_opt_log(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		Page      int
 		PageSize  int
 		SellerId  int `validate:"required" `
@@ -770,8 +752,7 @@ func get_opt_log(ctx *XHttpContent) {
 		Ip        string
 		StartTime string
 		EndTime   string
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -807,13 +788,12 @@ func get_opt_log(ctx *XHttpContent) {
 }
 
 func get_system_config(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId   int `validate:"required" `
 		ChannelId  int
 		ConfigName []interface{}
 		Memo       string
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
@@ -842,15 +822,14 @@ func get_system_config(ctx *XHttpContent) {
 }
 
 func add_system_config(ctx *XHttpContent) {
-	type RequestData struct {
+	reqdata := struct {
 		SellerId    int `validate:"required" `
 		ChannelId   int
 		ConfigName  string
 		ConfigValue string
 		ForClient   int
 		Memo        string
-	}
-	reqdata := RequestData{}
+	}{}
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
