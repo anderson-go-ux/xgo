@@ -406,7 +406,7 @@ func get_role(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	table := thisdb.Table("x_admin_role").OrderBy("id desc")
+	table := thisdb.Table("x_admin_role").OrderBy("Id desc")
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.Where("RoleName = ?", reqdata.RoleName, "")
 	total, err := table.Count()
@@ -508,7 +508,7 @@ func get_admin_user(ctx *XHttpContent) {
 	if reqdata.PageSize <= 0 || reqdata.PageSize > 2000 {
 		reqdata.PageSize = 15
 	}
-	table := thisdb.Table("x_admin_User")
+	table := thisdb.Table("x_admin_User").OrderBy("id desc")
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.Where("ChannelId = ?", reqdata.ChannelId, 0)
 	table = table.Where("Account = ?", reqdata.Account, "")
