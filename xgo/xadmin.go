@@ -789,6 +789,8 @@ func get_opt_log(ctx *XHttpContent) {
 
 func get_system_config(ctx *XHttpContent) {
 	reqdata := struct {
+		Page       int
+		PageSize   int
 		SellerId   int `validate:"required" `
 		ChannelId  int
 		ConfigName []interface{}
@@ -797,7 +799,7 @@ func get_system_config(ctx *XHttpContent) {
 	if ctx.RequestData(&reqdata) != nil {
 		return
 	}
-	table := thisdb.Table("x_config")
+	table := thisdb.Table("x_config").OrderBy("Id desc")
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.Where("ChannelId = ?", reqdata.ChannelId, -1)
 	table = table.Where("ConfigName in ", reqdata.ConfigName)
@@ -810,7 +812,7 @@ func get_system_config(ctx *XHttpContent) {
 		ctx.RespErr(err.Error())
 		return
 	}
-	config, err := table.Find()
+	config, err := table.PageData(reqdata.Page, reqdata.PageSize)
 	if err != nil {
 		logs.Error(err.Error())
 		ctx.RespErr(err.Error())
