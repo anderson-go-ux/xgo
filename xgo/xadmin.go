@@ -717,7 +717,7 @@ func get_login_log(ctx *XHttpContent) {
 	if reqdata.EndTime != "" {
 		reqdata.EndTime = UtcToLocalTime(reqdata.EndTime)
 	}
-	table := thisdb.Table("x_admin_login_log")
+	table := thisdb.Table("x_admin_login_log").OrderBy("Id desc")
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.Where("ChannelId = ?", reqdata.ChannelId, 0)
 	table = table.Where("Account = ?", reqdata.Account, "")
@@ -762,7 +762,7 @@ func get_opt_log(ctx *XHttpContent) {
 	if reqdata.EndTime != "" {
 		reqdata.EndTime = UtcToLocalTime(reqdata.EndTime)
 	}
-	table := thisdb.Table("x_admin_opt_log")
+	table := thisdb.Table("x_admin_opt_log").OrderBy("Id desc")
 	table = table.Where("SellerId = ?", reqdata.SellerId, nil)
 	table = table.Where("ChannelId = ?", reqdata.ChannelId, 0)
 	table = table.Where("Account = ?", reqdata.Account, "")
