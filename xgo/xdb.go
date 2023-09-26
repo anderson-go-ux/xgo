@@ -231,6 +231,31 @@ func (this *XMaps) FromBytes(bytes []byte) error {
 	return json.Unmarshal(bytes, &this.RawData)
 }
 
+func (this *XMap) FromObject(obj interface{}) error {
+	bytes, err := json.Marshal(&obj)
+	if err != nil {
+		return err
+	}
+	this.RawData = map[string]interface{}{}
+	json.Unmarshal(bytes, &this.RawData)
+	return json.Unmarshal(bytes, &this.RawData)
+}
+
+func (this *XMaps) FromObjects(obj []interface{}) error {
+	bytes, err := json.Marshal(&obj)
+	if err != nil {
+		return err
+	}
+	this.RawData = []XMap{}
+	data := []map[string]interface{}{}
+	json.Unmarshal(bytes, &data)
+	for i := 0; i < len(data); i++ {
+		XMap := XMap{RawData: data[i]}
+		this.RawData = append(this.RawData, XMap)
+	}
+	return json.Unmarshal(bytes, &this.RawData)
+}
+
 func (this *XMaps) Maps() *[]map[string]interface{} {
 	if this.RawData == nil {
 		return nil
@@ -260,6 +285,19 @@ func (this *XMaps) Index(index int) *XMap {
 		return nil
 	}
 	return &this.RawData[index]
+}
+
+func (this *XMaps) Remove(index int) {
+	if this.RawData == nil {
+		return
+	}
+	if index < 0 {
+		return
+	}
+	if index >= len(this.RawData) {
+		return
+	}
+	this.RawData = append(this.RawData[:index], this.RawData[index+1:]...)
 }
 
 func (this *XMaps) ForEach(cb func(*XMap) bool) {
