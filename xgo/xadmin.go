@@ -44,7 +44,7 @@ func AdminAfterAddChannel(cb func(int)) {
 	afterAddChannel = cb
 }
 
-func AdminInit(http *XHttp, db *XDb, redis *XRedis, fullauth string) {
+func AdminInit(http *XHttp, db *XDb, redis *XRedis) {
 	thishttp = http
 	thisdb = db
 	thisredis = redis
