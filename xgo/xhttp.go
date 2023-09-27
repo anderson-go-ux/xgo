@@ -47,6 +47,7 @@ type XHttp struct {
 	default_msg_callback XWsDefaultMsgCallback
 	logwriter            io.Writer
 	logname              string
+	port                 int
 }
 
 type XHttpContent struct {
@@ -157,11 +158,11 @@ func abuhttpcors() gin.HandlerFunc {
 
 func (this *XHttp) Init(cfgname string, token *XRedis) {
 	this.token = token
-	port := GetConfigInt(cfgname+".port", true, 0)
+	this.port = int(GetConfigInt(cfgname+".port", true, 0))
 	this.gin = gin.New()
 	this.gin.Use(abuhttpcors())
 	go func() {
-		bind := fmt.Sprint("0.0.0.0:", port)
+		bind := fmt.Sprint("0.0.0.0:", this.port)
 		this.gin.Run(bind)
 	}()
 	this.upgrader = websocket.Upgrader{
@@ -179,7 +180,11 @@ func (this *XHttp) Init(cfgname string, token *XRedis) {
 			}
 		}()
 	}
-	logs.Debug("http listen:", port)
+	logs.Debug("http listen:", this.port)
+}
+
+func (this *XHttp) Port() int {
+	return this.port
 }
 
 func (this *XHttp) SetLogCallback(cb RequestLogCallback) {

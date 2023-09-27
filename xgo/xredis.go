@@ -33,10 +33,10 @@ func (this *XRedis) Init(cfgname string) {
 	}
 	host := GetConfigString(fmt.Sprint(cfgname, ".host"), true, "")
 	port := GetConfigInt(fmt.Sprint(cfgname, ".port"), true, 0)
-	db := GetConfigInt(fmt.Sprint(cfgname, ".db"), true, -1)
+	db := int(GetConfigInt(fmt.Sprint(cfgname, ".db"), true, -1))
 	password := GetConfigString(fmt.Sprint(cfgname, ".password"), true, "")
-	maxidle := GetConfigInt(fmt.Sprint(cfgname, ".maxidle"), true, 0)
-	maxactive := GetConfigInt(fmt.Sprint(cfgname, ".maxactive"), true, 0)
+	maxidle := int(GetConfigInt(fmt.Sprint(cfgname, ".maxidle"), true, 0))
+	maxactive := int(GetConfigInt(fmt.Sprint(cfgname, ".maxactive"), true, 0))
 	idletimeout := GetConfigInt(fmt.Sprint(cfgname, ".idletimeout"), true, 0)
 	this.redispool = &redis.Pool{
 		MaxIdle:     maxidle,

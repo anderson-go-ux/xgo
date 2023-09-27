@@ -53,8 +53,10 @@ go clean -modcache
 var TimeLayout string = "2006-01-02 15:04:05"
 var DateLayout string = "2006-01-02"
 
+// 通用map定义
 type H map[string]any
 
+// 初始化
 func Init() {
 	mrand.NewSource(time.Now().UnixNano())
 	gin.SetMode(gin.ReleaseMode)
@@ -96,26 +98,31 @@ func Init() {
 	}
 }
 
+// 获取配置文件配置的env
 func Env() string {
 	return env
 }
 
+// 获取配置文件配置的project
 func Prjoect() string {
 	return project
 }
 
+// 阻塞,防止主线程退出
 func Run() {
 	for {
 		time.Sleep(time.Second * 1)
 	}
 }
 
+// 获取字符串md5值 eg:test -> 098f6bcd4621d373cade4e832627b4f6
 func Md5(str string) string {
 	h := md5.New()
 	h.Write([]byte(str))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
+// interface转string
 func ToString(v interface{}) string {
 	if v == nil {
 		return ""
@@ -133,10 +140,15 @@ func ToString(v interface{}) string {
 		return fmt.Sprint(v.(float32))
 	case float64:
 		return fmt.Sprint(v.(float64))
+	default:
+		if bytes, ok := v.([]byte); ok {
+			return string(bytes)
+		}
 	}
 	return ""
 }
 
+// interface转int64
 func ToInt(v interface{}) int64 {
 	if v == nil {
 		return 0
@@ -158,10 +170,19 @@ func ToInt(v interface{}) int64 {
 		return int64(v.(float32))
 	case float64:
 		return int64(v.(float64))
+	default:
+		if bytes, ok := v.([]byte); ok {
+			i, err := strconv.ParseInt(string(bytes), 10, 64)
+			if err != nil {
+				return 0
+			}
+			return i
+		}
 	}
 	return 0
 }
 
+// interface转float64
 func ToFloat(v interface{}) float64 {
 	if v == nil {
 		return 0
@@ -183,14 +204,24 @@ func ToFloat(v interface{}) float64 {
 		return float64(v.(float32))
 	case float64:
 		return v.(float64)
+	default:
+		if bytes, ok := v.([]byte); ok {
+			i, err := strconv.ParseFloat(string(bytes), 64)
+			if err != nil {
+				return 0
+			}
+			return i
+		}
 	}
 	return 0
 }
 
+// 验证谷歌验证码
 func VerifyGoogleCode(secret string, code string) bool {
 	return totp.Validate(code, secret)
 }
 
+// 创建新的google secret
 func NewGoogleSecret(Issuer string, AccountName string) (string, string) {
 	key, _ := totp.Generate(totp.GenerateOpts{
 		Issuer:      Issuer,
@@ -199,6 +230,7 @@ func NewGoogleSecret(Issuer string, AccountName string) (string, string) {
 	return key.Secret(), key.URL()
 }
 
+// 读取文件全部文本
 func ReadAllText(path string) string {
 	bytes, err := os.ReadFile(path)
 	if err != nil {
@@ -208,6 +240,7 @@ func ReadAllText(path string) string {
 	return string(bytes)
 }
 
+// 时间戳转本地日期 eg: 1609459200 -> 2021-01-01
 func TimeStampToLocalDate(tvalue int64) string {
 	if tvalue == 0 {
 		return ""
@@ -217,11 +250,13 @@ func TimeStampToLocalDate(tvalue int64) string {
 	return strings.Split(tstr, " ")[0]
 }
 
+// 本地日期转时间戳(秒) eg: 2021-01-01 -> 1609459200
 func LocalDateToTimeStamp(timestr string) int64 {
 	t, _ := time.ParseInLocation("2006-01-02", timestr, time.Local)
 	return t.Local().Unix()
 }
 
+// 时间戳(秒)转本地时间 eg: 1609459200 -> 2021-01-01 08:00:00
 func TimeStampToLocalTime(tvalue int64) string {
 	if tvalue == 0 {
 		return ""
@@ -231,11 +266,13 @@ func TimeStampToLocalTime(tvalue int64) string {
 	return tstr
 }
 
+// 本地时间转时间戳(秒) eg: 2021-01-01 08:00:00 -> 1609459200
 func LocalTimeToTimeStamp(timestr string) int64 {
 	t, _ := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
 	return t.Local().Unix()
 }
 
+// 本地时间转utc时间 eg: 2021-01-01 08:00:00 -> 2021-01-01T00:00:00Z
 func LocalTimeToUtc(timestr string) string {
 	if len(timestr) == 0 {
 		return timestr
@@ -248,6 +285,7 @@ func LocalTimeToUtc(timestr string) string {
 	return r
 }
 
+// utc时间转本地时间 eg: 2021-01-01T00:00:00Z -> 2021-01-01 08:00:00
 func UtcToLocalTime(timestr string) string {
 	if len(timestr) == 0 {
 		return ""
@@ -260,16 +298,19 @@ func UtcToLocalTime(timestr string) string {
 	return localTime.In(time.Local).Format("2006-01-02 15:04:05")
 }
 
+// 获取本地时间 eg: 2021-01-01 00:00:00
 func GetLocalTime() string {
 	tm := time.Now()
 	return tm.In(time.Local).Format("2006-01-02 15:04:05")
 }
 
+// 获取本地日期 eg: 2021-01-01
 func GetLocalDate() string {
 	tm := time.Now()
 	return tm.In(time.Local).Format("2006-01-02")
 }
 
+// go对象转map
 func ObjectToMap(obj any) *map[string]interface{} {
 	bytes, err := json.Marshal(obj)
 	if err != nil {
@@ -281,28 +322,7 @@ func ObjectToMap(obj any) *map[string]interface{} {
 	return &data
 }
 
-type DBError struct {
-	ErrCode int
-	ErrMsg  string
-}
-
-func GetDbError(data *map[string]interface{}) *DBError {
-	err := DBError{}
-	code, codeok := (*data)["errcode"]
-	if !codeok {
-		return nil
-	}
-	err.ErrCode = int(ToInt(code))
-	if err.ErrCode == 0 {
-		return nil
-	}
-	msg, msgok := (*data)["errmsg"]
-	if msgok {
-		err.ErrMsg = ToString(msg)
-	}
-	return &err
-}
-
+// 获取ip地理位置
 func GetIpLocation(ip string) string {
 	if ipdata == "" {
 		return ""
@@ -316,7 +336,13 @@ func GetIpLocation(ip string) string {
 	}
 }
 
+// 备份数据库
+// db: 数据库连接
+// path: 备份文件路径
 func BackupDb(db *XDb, path string) {
+	if env != "dev" {
+		return
+	}
 	var strall string
 	var tables []string
 	tabledata, _ := db.Query("SHOW FULL TABLES")
@@ -395,29 +421,31 @@ func BackupDb(db *XDb, path string) {
 	write.Flush()
 }
 
-func pcks5padding(ciphertext []byte, blockSize int) []byte {
-	padding := blockSize - len(ciphertext)%blockSize
-	padText := bytes.Repeat([]byte{byte(padding)}, padding)
-	return append(ciphertext, padText...)
-}
-
-func DesCbcEncrypt(data, key []byte, iv []byte) ([]byte, error) {
+// des cbc解密
+// data:密文
+// key:密钥
+// iv:偏移量
+func DesCbcEncrypt(data []byte, key []byte, iv []byte) ([]byte, error) {
 	block, err := des.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 	bs := block.BlockSize()
-	data = pcks5padding(data, bs)
+	padding := bs - len(data)%bs
+	padText := bytes.Repeat([]byte{byte(padding)}, padding)
+	data = append(data, padText...)
 	blockMode := cipher.NewCBCEncrypter(block, iv)
 	out := make([]byte, len(data))
 	blockMode.CryptBlocks(out, data)
 	return out, nil
 }
 
+// base64字符串解码获得[]byte
 func Base64Encode(src []byte) []byte {
 	return []byte(base64.StdEncoding.EncodeToString(src))
 }
 
+// 判断字符串是否包含小写字母
 func StrContainsLower(str string) bool {
 	for _, char := range str {
 		if unicode.IsLower(char) {
@@ -427,6 +455,7 @@ func StrContainsLower(str string) bool {
 	return false
 }
 
+// 判断字符串是否包含大写字母
 func StrContainsUpper(str string) bool {
 	for _, char := range str {
 		if unicode.IsUpper(char) {
@@ -436,6 +465,7 @@ func StrContainsUpper(str string) bool {
 	return false
 }
 
+// 判断支付是否包含数字
 func StrContainsDigit(str string) bool {
 	for _, char := range str {
 		if unicode.IsDigit(char) {
@@ -445,6 +475,22 @@ func StrContainsDigit(str string) bool {
 	return false
 }
 
+//导出excel
+//filename:excel文件名
+//edata:要导出数据
+//options:导出配置
+/*
+	options格式:
+	[
+		{
+			"field":"State", edata中的字段名
+			"name":"状态", 导出到excel的列名
+			"values":{"1":"男","2":"女"}} edata中的值转换成excel中的值 eg:edata中的State字段值为1,则导出到excel中的值为男
+			"time":1, 可选项,如果设置了time,则会把时间转换成本地时间 eg:2021-01-01T00:00:00Z -> 2021-01-01 08:00:00
+			"date":1, 可选项,如果设置了date,则会把时间转换成本地日期 eg:2021-01-01T00:00:00Z -> 2021-01-01
+		}
+	]
+*/
 func Export(filename string, edata *XMaps, options string) string {
 	excel := excelize.NewFile()
 	jopt := []map[string]interface{}{}
