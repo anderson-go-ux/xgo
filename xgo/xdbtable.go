@@ -165,6 +165,7 @@ func (this *XDbTable) Or(field interface{}, value interface{}, ignorevalue inter
 	return this
 }
 
+// 找第一个,只找一个
 func (this *XDbTable) First() (*XMap, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
@@ -211,16 +212,19 @@ func (this *XDbTable) First() (*XMap, error) {
 
 }
 
+// 限制返回数量
 func (this *XDbTable) Limit(limit int64) *XDbTable {
 	this.limit = limit
 	return this
 }
 
+// 跳过行数
 func (this *XDbTable) Offset(offset int64) *XDbTable {
 	this.offset = offset
 	return this
 }
 
+// 查找符合条件的所有数据
 func (this *XDbTable) Find() (*XMaps, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
@@ -273,6 +277,7 @@ func (this *XDbTable) Find() (*XMaps, error) {
 
 }
 
+// 插入数据
 func (this *XDbTable) Insert(value interface{}) (int64, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
@@ -317,6 +322,7 @@ func (this *XDbTable) Insert(value interface{}) (int64, error) {
 	}
 }
 
+// replace数据
 func (this *XDbTable) Replace(value interface{}) (int64, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
@@ -361,6 +367,7 @@ func (this *XDbTable) Replace(value interface{}) (int64, error) {
 	}
 }
 
+// 更新数据
 func (this *XDbTable) Update(value interface{}) (int64, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
@@ -408,6 +415,7 @@ func (this *XDbTable) Update(value interface{}) (int64, error) {
 	}
 }
 
+// 删除数据
 func (this *XDbTable) Delete() (int64, error) {
 	if this.selectstr == "" {
 		this.selectstr = "*"
@@ -435,6 +443,7 @@ func (this *XDbTable) Delete() (int64, error) {
 	}
 }
 
+// 获取符合条件的数量
 func (this *XDbTable) Count() (int64, error) {
 	str := this.selectstr
 	this.selectstr = "count(*) as total"
@@ -446,6 +455,7 @@ func (this *XDbTable) Count() (int64, error) {
 	return total.Int64("total"), nil
 }
 
+// 获取分页数据
 func (this *XDbTable) PageData(page int, pagesize int) (*XMaps, error) {
 	if page <= 0 {
 		page = 1
@@ -506,6 +516,7 @@ func (this *XDbTable) PageData(page int, pagesize int) (*XMaps, error) {
 	}
 }
 
+// 获取表的导出配置
 func (this *XDbTable) GetExportOptions() string {
 	sql := fmt.Sprintf("SELECT COLUMN_NAME,COLUMN_COMMENT FROM INFORMATION_SCHEMA.COLUMNS  WHERE TABLE_SCHEMA = '%s'  AND TABLE_NAME = '%s'", this.db.database, this.tablename[0])
 	data, err := this.db.Query(sql)

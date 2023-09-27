@@ -19,6 +19,7 @@ import (
 	"time"
 	"unicode"
 
+	"math/rand"
 	mrand "math/rand"
 
 	"github.com/beego/beego/logs"
@@ -530,4 +531,13 @@ func Export(filename string, edata *XMaps, options string) string {
 	filename = filename + ".xlsx"
 	excel.SaveAs(filename)
 	return filename
+}
+
+func RandomString(n int) string {
+	const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
+	bytes := make([]byte, n)
+	for i := range bytes {
+		bytes[i] = letters[rand.Int63()%int64(len(letters))]
+	}
+	return string(bytes)
 }
