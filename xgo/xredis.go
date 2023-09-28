@@ -136,10 +136,10 @@ func (this *XRedis) GetLock(key string, expire_second int) bool {
 			logs.Error(err.Error())
 			return false
 		}
-		ir := r.(int64)
-		if ir == 1 && expire_second > 0 {
-			conn.Do("expire", key, expire_second)
+		if r == nil {
+			return false
 		}
+		ir := ToInt(r)
 		return ir == 1
 	} else {
 		r, err := conn.Do("set", key, "1", "EX", expire_second, "NX")
@@ -147,8 +147,11 @@ func (this *XRedis) GetLock(key string, expire_second int) bool {
 			logs.Error(err.Error())
 			return false
 		}
-		ir := r.(int64)
-		return ir == 1
+		if r == nil {
+			return false
+		}
+		ir := ToString(r)
+		return ir == "OK"
 	}
 }
 
