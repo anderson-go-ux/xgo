@@ -194,12 +194,30 @@ func (this *XRedis) GetCacheStrings(key string, cb func() (*[]string, error)) (*
 	}
 }
 
+func (this *XRedis) GetCacheInt(key string, cb func() (int64, error)) (int64, error) {
+	data, _ := this.Get(key)
+	if data != nil {
+		return ToInt(data), nil
+	} else {
+		return cb()
+	}
+}
+
 func (this *XRedis) GetCacheInts(key string, cb func() (*[]int64, error)) (*[]int64, error) {
 	data, _ := this.Get(key)
 	if data != nil {
 		jdata := []int64{}
 		json.Unmarshal(data, &jdata)
 		return &jdata, nil
+	} else {
+		return cb()
+	}
+}
+
+func (this *XRedis) GetCacheFloat(key string, cb func() (float64, error)) (float64, error) {
+	data, _ := this.Get(key)
+	if data != nil {
+		return ToFloat(data), nil
 	} else {
 		return cb()
 	}
