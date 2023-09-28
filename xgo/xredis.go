@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/beego/beego/logs"
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 )
 
 type XRedisSubCallback func(string)
