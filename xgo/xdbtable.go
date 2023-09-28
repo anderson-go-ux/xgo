@@ -30,7 +30,14 @@ func (this *XDbTable) Tx(tx *sql.Tx) *XDbTable {
 
 // 选择项,默认Select("*")  eg:Select("count(UserId) as UserCount")
 func (this *XDbTable) Select(selectstr string) *XDbTable {
-	this.selectstr = selectstr
+	if selectstr == "" {
+		this.selectstr = selectstr
+	} else {
+		if this.selectstr != "" {
+			this.selectstr += ","
+		}
+		this.selectstr += selectstr
+	}
 	return this
 }
 
