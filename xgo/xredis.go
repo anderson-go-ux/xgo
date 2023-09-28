@@ -130,16 +130,26 @@ func (this *XRedis) GetLock(key string, expire_second int) bool {
 	key = fmt.Sprintf("%v:%v", project, key)
 	conn := this.redispool.Get()
 	defer conn.Close()
-	r, err := conn.Do("setnx", key, "1")
-	if err != nil {
-		logs.Error(err.Error())
-		return false
+	if expire_second <= 0 {
+		r, err := conn.Do("setnx", key, "1")
+		if err != nil {
+			logs.Error(err.Error())
+			return false
+		}
+		ir := r.(int64)
+		if ir == 1 && expire_second > 0 {
+			conn.Do("expire", key, expire_second)
+		}
+		return ir == 1
+	} else {
+		r, err := conn.Do("set", key, "1", "EX", expire_second, "NX")
+		if err != nil {
+			logs.Error(err.Error())
+			return false
+		}
+		ir := r.(int64)
+		return ir == 1
 	}
-	ir := r.(int64)
-	if ir == 1 && expire_second > 0 {
-		conn.Do("expire", key, expire_second)
-	}
-	return ir == 1
 }
 
 func (this *XRedis) ReleaseLock(key string) {
