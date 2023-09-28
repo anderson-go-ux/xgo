@@ -16,8 +16,5 @@ func main() {
 	http.InitWs("/sapi/ws")
 	http.InitWs("/capi/ws")
 	xgo.AdminInit(http, db, redis)
-	http.OnWsConnect(func(s string) {
-		http.SendWsMsg(s, "hello", xgo.H{})
-	})
 	xgo.Run()
 }
