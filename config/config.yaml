@@ -2,6 +2,7 @@ server:
   env: dev
   project: xgotest
   ipdata: ./config/ipdata.dat #qqwry数据文件地址
+  snowflakenode: 1 #雪花算法节点
   http:
     port: 4034
   rpc:

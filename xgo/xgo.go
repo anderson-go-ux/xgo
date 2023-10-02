@@ -75,6 +75,11 @@ func Init() {
 		logs.Error("读取配置文件失败", err)
 		return
 	}
+	snowflakenode := GetConfigInt("server.snowflakenode", true, 0)
+	if snowflakenode != 0 {
+		NewIdWorker(snowflakenode)
+	}
+
 	env = GetConfigString("server.env", true, "")
 	project = GetConfigString("server.project", true, "")
 	ipdata = GetConfigString("server.ipdata", false, "")
@@ -540,4 +545,8 @@ func RandomString(n int) string {
 		bytes[i] = letters[rand.Int63()%int64(len(letters))]
 	}
 	return string(bytes)
+}
+
+func GetId() int64 {
+	return idworker.GetId()
 }
