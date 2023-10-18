@@ -236,6 +236,14 @@ func NewGoogleSecret(Issuer string, AccountName string) (string, string) {
 	return key.Secret(), key.URL()
 }
 
+func GetGoogleQrCodeUrl(secret string, issuer string, accountname string) string {
+	key, _ := totp.Generate(totp.GenerateOpts{
+		Issuer:      issuer,
+		AccountName: accountname,
+	})
+	return key.URL()
+}
+
 // 读取文件全部文本
 func ReadAllText(path string) string {
 	bytes, err := os.ReadFile(path)
