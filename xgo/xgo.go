@@ -240,6 +240,7 @@ func GetGoogleQrCodeUrl(secret string, issuer string, accountname string) string
 	key, _ := totp.Generate(totp.GenerateOpts{
 		Issuer:      issuer,
 		AccountName: accountname,
+		Secret:[]byte(secret),
 	})
 	return key.URL()
 }
