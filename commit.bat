@@ -1,15 +1,22 @@
 @echo off
-IF not "%1"=="" (
-    setlocal enabledelayedexpansion
-    set "param=%~1"
-    :trimLeading
-    if "!param:~0,1!"==" " set "param=!param:~1!" & goto :trimLeading
-    echo !param! > version.txt
+
+set "filePath=version.txt"
+set ver=""
+for /f "tokens=*" %%a in (%filePath%) do (
+    set ver=%%a
 )
+
+set ver1=%ver:~0,5%
+set ver2=%ver:~5,5%
+
+set /a ver2ex=%ver2% + 1
+
+set ver=%ver1%%ver2ex%
+
+
 git add *
 git commit -m'auto'
 git push
-IF not  "%1"=="" (
-    git tag %1
-    git push --tags
-)
+git tag %ver%
+git push --tags
+echo  %ver% > version.txt
