@@ -746,6 +746,7 @@ func get_opt_log(ctx *XHttpContent) {
 		Page      int
 		PageSize  int
 		SellerId  int `validate:"required" `
+		ReqPath string
 		ChannelId int
 		Account   string
 		OptName   string
@@ -770,6 +771,7 @@ func get_opt_log(ctx *XHttpContent) {
 	table = table.Where("Ip = ?", reqdata.Ip, "")
 	table = table.Where("CreateTime >= ?", reqdata.StartTime, "")
 	table = table.Where("CreateTime < ?", reqdata.EndTime, "")
+	table = table.Where("ReqPath = ?",  reqdata.ReqPath, "")
 	total, err := table.Count()
 	if err != nil {
 		logs.Error(err.Error())
