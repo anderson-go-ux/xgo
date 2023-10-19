@@ -13,10 +13,11 @@ set /a ver2ex=%ver2% + 1
 
 set ver=%ver1%%ver2ex%
 
+echo  %ver% > version.txt
 
 git add *
 git commit -m'auto'
 git push
 git tag %ver%
 git push --tags
-echo  %ver% > version.txt
+
