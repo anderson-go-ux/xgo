@@ -77,7 +77,7 @@ func Init() {
 	}
 	snowflakenode := GetConfigInt("server.snowflakenode", true, 0)
 	if snowflakenode != 0 {
-		newIdWorker(snowflakenode)
+		newIdWorker(int(snowflakenode))
 	}
 
 	env = GetConfigString("server.env", true, "")

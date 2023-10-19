@@ -8,17 +8,6 @@ import (
 
 var snow_worker snowworker
 
-const (
-	snow_nodeBits  uint8 = 10
-	snow_stepBits  uint8 = 12
-	snow_nodeMax   int64 = -1 ^ (-1 << snow_nodeBits)
-	snow_stepMax   int64 = -1 ^ (-1 << snow_stepBits)
-	snow_timeShift uint8 = snow_nodeBits + snow_stepBits
-	snow_nodeShift uint8 = snow_stepBits
-)
-
-var snow_epoch int64 = 1514764800000
-
 type snowflake struct {
 	mu        sync.Mutex
 	timestamp int64
@@ -36,7 +25,7 @@ func (n *snowflake) GetId() int64 {
 	now := time.Now().UnixNano() / 1e6
 	if n.timestamp == now {
 		n.step++
-		if n.step > snow_stepMax {
+		if n.step > -1 ^ (-1 << 12) {
 			for now <= n.timestamp {
 				now = time.Now().UnixNano() / 1e6
 			}
@@ -45,17 +34,17 @@ func (n *snowflake) GetId() int64 {
 		n.step = 0
 	}
 	n.timestamp = now
-	result := (now-snow_epoch)<<snow_timeShift | (n.node << snow_nodeShift) | (n.step)
+	result := (now-1514764800000)<<10 + 12 | (n.node << 12) | (n.step)
 	return result
 }
 
-func newIdWorker(node int64) {
-	if node < 0 || node > snow_nodeMax {
+func newIdWorker(node int) {
+	if node < 0 || node > -1 ^ (-1 << 10) {
 		panic(fmt.Sprintf("snowflake节点必须在0-%d之间", node))
 	}
 	snowflakeIns := &snowflake{
 		timestamp: 0,
-		node:      node,
+		node:      int64(node),
 		step:      0,
 	}
 	snow_worker = snowflakeIns
