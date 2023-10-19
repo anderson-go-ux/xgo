@@ -13,16 +13,11 @@ set /a ver2ex=%ver2% + 1
 
 set ver=%ver1%%ver2ex%
 
-set "trimmedString="
-for /f "tokens=* delims=" %%a in ("%ver%") do (
-    set "trimmedString=%%a"
-)
-
-echo  %trimmedString% > version.txt
+echo  %ver% > version.txt
 
 git add *
 git commit -m'auto'
 git push
-git tag %trimmedString%
+git tag %ver%
 git push --tags
 
