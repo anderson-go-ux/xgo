@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/zhms/xgo/xgo"
 )
 
@@ -16,5 +18,6 @@ func main() {
 	http.InitWs("/sapi/ws")
 	http.InitWs("/capi/ws")
 	xgo.AdminInit(http, db, redis)
+	fmt.Println(xgo.GetId())
 	xgo.Run()
 }

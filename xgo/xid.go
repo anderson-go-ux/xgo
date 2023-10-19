@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var idworker IdWorker
+var snow_worker snowworker
 
 const (
 	snow_nodeBits  uint8 = 10
@@ -26,7 +26,7 @@ type snowflake struct {
 	step      int64
 }
 
-type IdWorker interface {
+type snowworker interface {
 	GetId() int64
 }
 
@@ -49,7 +49,7 @@ func (n *snowflake) GetId() int64 {
 	return result
 }
 
-func NewIdWorker(node int64) {
+func newIdWorker(node int64) {
 	if node < 0 || node > snow_nodeMax {
 		panic(fmt.Sprintf("snowflake节点必须在0-%d之间", node))
 	}
@@ -58,5 +58,5 @@ func NewIdWorker(node int64) {
 		node:      node,
 		step:      0,
 	}
-	idworker = snowflakeIns
+	snow_worker = snowflakeIns
 }
