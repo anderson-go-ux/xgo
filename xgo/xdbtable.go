@@ -138,7 +138,6 @@ func (this *XDbTable) Group() *XDbTable {
 		this.groupopt = ""
 		this.wherestr = ""
 	}
-	fmt.Println(this.wheregroup + this.groupopt + this.wherestr)
 	return this
 }
 
@@ -282,6 +281,44 @@ func (this *XDbTable) Find() (*XMaps, error) {
 		return data, nil
 	}
 
+}
+func (this *XDbTable) GetQuery() (string, []interface{}) {
+	if this.selectstr == "" {
+		this.selectstr = "*"
+	}
+	sql := ""
+	for i := 0; i < len(this.tablename); i++ {
+		sqlex := fmt.Sprintf("select %v from %v", this.selectstr, this.tablename[i])
+		if len(this.tablename) == 1 {
+			for i := 0; i < len(this.join); i++ {
+				sqlex += fmt.Sprintf(" %v ", this.join[i])
+			}
+		}
+		if this.wherestr == "" {
+			this.groupopt = ""
+		}
+		wherestr := this.wheregroup + this.groupopt + this.wherestr
+		if wherestr != "" {
+			sqlex += " where "
+		}
+		sqlex += wherestr
+		sql += sqlex
+		if i < len(this.tablename)-1 {
+			this.wheredata = append(this.wheredata, this.wheredata...)
+			sql += " union "
+		}
+	}
+	if this.orderby != "" {
+		sql += " order by "
+		sql += this.orderby
+	}
+	if this.limit > 0 {
+		sql += fmt.Sprintf(" limit %v ", this.limit)
+		if this.offset > 0 {
+			sql += fmt.Sprintf("offset %v ", this.offset)
+		}
+	}
+	return sql, this.wheredata
 }
 
 // 插入数据

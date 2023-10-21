@@ -218,3 +218,25 @@ func (this *XDb) getone(rows *sql.Rows) *map[string]any {
 	}
 	return &data
 }
+
+func (this *XDb) Union(tables ...interface{}) (*XMaps, error) {
+	sql := ""
+	data := []interface{}{}
+	for i := 0; i < len(tables); i++ {
+		t := tables[i].(*XDbTable)
+		if sql != "" {
+			sql += " union "
+		}
+		s, d := t.GetQuery()
+		sql += s
+		for j := 0; j < len(d); j++ {
+			data = append(data, d[j])
+		}
+	}
+	rows, err := this.db.DB().Query(sql, data...)
+	if err != nil {
+		logs.Error(err, "|", sql, data)
+		return nil, err
+	}
+	return this.GetResult(rows), nil
+}
