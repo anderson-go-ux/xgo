@@ -688,7 +688,7 @@ func (this *XRedis) HGet(key string, field string) interface{} {
 	return ret
 }
 
-func (this *XRedis) HGetAll(key string) *map[string]interface{} {
+func (this *XRedis) HGetAll(key string) *XMap {
 	key = fmt.Sprintf("%v:%v", project, key)
 	conn := this.redispool.Get()
 	defer conn.Close()
@@ -707,7 +707,7 @@ func (this *XRedis) HGetAll(key string) *map[string]interface{} {
 			mapret[string(arrret[i].([]byte))] = string(arrret[i+1].([]byte))
 		}
 	}
-	return &mapret
+	return &XMap{RawData: mapret}
 }
 
 func (this *XRedis) HIncrByFloat(key string, field string, value float64) (float64, error) {
@@ -774,7 +774,7 @@ func (this *XRedis) HSetNx(key string, field string, value interface{}) (bool, e
 	return ret.(int64) == 1, nil
 }
 
-func (this *XRedis) HMGet(key string, fields ...interface{}) *map[string]interface{} {
+func (this *XRedis) HMGet(key string, fields ...interface{}) *XMap {
 	key = fmt.Sprintf("%v:%v", project, key)
 	conn := this.redispool.Get()
 	defer conn.Close()
@@ -797,7 +797,7 @@ func (this *XRedis) HMGet(key string, fields ...interface{}) *map[string]interfa
 			mapret[field.(string)] = string(arrret[i].([]byte))
 		}
 	}
-	return &mapret
+	return &XMap{RawData: mapret}
 }
 
 func (this *XRedis) SAdd(key string, value interface{}) error {
