@@ -109,7 +109,7 @@ func (this *XMap) Delete(field string) {
 //设置字段值
 func (this *XMap) Set(field string, value interface{}) {
 	if this.RawData == nil {
-		return
+		this.RawData = map[string]interface{}{}
 	}
 	this.RawData[field] = value
 }
