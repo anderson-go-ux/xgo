@@ -125,3 +125,12 @@ func (this *XMap) ForEach(cb func(string, interface{}) bool) {
 		}
 	}
 }
+
+//字段是否存在
+func (this *XMap) Exists(field string) bool {
+	if this.RawData == nil {
+		return false
+	}
+	_, ok := this.RawData[field]
+	return ok
+}
