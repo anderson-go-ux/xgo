@@ -240,7 +240,7 @@ func GetGoogleQrCodeUrl(secret string, issuer string, accountname string) string
 	key, _ := totp.Generate(totp.GenerateOpts{
 		Issuer:      issuer,
 		AccountName: accountname,
-		Secret:[]byte(secret),
+		Secret:      []byte(secret),
 	})
 	return key.URL()
 }
@@ -410,26 +410,32 @@ func BackupDb(db *XDb, path string) {
 		return true
 	})
 
-	// strall += "/*\r\n"
-	// for i := 0; i < len(tables); i++ {
-	// 	td, _ := db.Query(fmt.Sprintf("DESCRIBE %v", tables[i]))
-	// 	strall += fmt.Sprintf("type %v struct {\r\n", tables[i])
-	// 	td.ForEach(func(xd *XMap) bool {
-	// 		sname := xd.String("Type")
-	// 		tname := ""
-	// 		if strings.Index(sname, "int") == 0 || strings.Index(sname, "bigint") == 0 || strings.Index(sname, "unsigned") == 0 || strings.Index(sname, "timestamp") == 0 {
-	// 			tname = "int"
-	// 		} else if strings.Index(sname, "varchar") == 0 || strings.Index(sname, "datetime") == 0 || strings.Index(sname, "date") == 0 || strings.Index(sname, "text") == 0 {
-	// 			tname = "string"
-	// 		} else if strings.Index(sname, "decimal") == 0 {
-	// 			tname = "float64"
-	// 		}
-	// 		strall += fmt.Sprintf("\t%v %v `gorm:\"column:%v\"`\r\n", xd.String("Field"), tname, xd.String("Field"))
-	// 		return true
-	// 	})
-	// 	strall += "}\r\n\r\n"
-	// }
-	// strall += "*/\r\n"
+	strall += "/*\r\n"
+	for i := 0; i < len(tables); i++ {
+		td, _ := db.Query(fmt.Sprintf("DESCRIBE %v", tables[i]))
+		tname := tables[i]
+		words := strings.Split(tname, "_")
+		for i, word := range words {
+			words[i] = strings.Title(word)
+		}
+		tname = strings.Join(words, "")
+		strall += fmt.Sprintf("type %v struct {\r\n", tname)
+		td.ForEach(func(xd *XMap) bool {
+			sname := xd.String("Type")
+			tname := ""
+			if strings.Index(sname, "int") == 0 || strings.Index(sname, "bigint") == 0 || strings.Index(sname, "unsigned") == 0 || strings.Index(sname, "timestamp") == 0 {
+				tname = "int"
+			} else if strings.Index(sname, "varchar") == 0 || strings.Index(sname, "datetime") == 0 || strings.Index(sname, "date") == 0 || strings.Index(sname, "text") == 0 {
+				tname = "string"
+			} else if strings.Index(sname, "decimal") == 0 {
+				tname = "float64"
+			}
+			strall += fmt.Sprintf("\t%v %v `gorm:\"column:%v\"`\r\n", xd.String("Field"), tname, xd.String("Field"))
+			return true
+		})
+		strall += "}\r\n\r\n"
+	}
+	strall += "*/\r\n"
 	file, _ := os.OpenFile(path, os.O_TRUNC|os.O_CREATE, 0666)
 	write := bufio.NewWriter(file)
 	write.WriteString(strall)

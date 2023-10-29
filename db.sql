@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS  x_admin_login_log (
   KEY Account (Account) USING BTREE,
   KEY LoginIp (LoginIp) USING BTREE,
   KEY CreateTime (CreateTime) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=0 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE IF NOT EXISTS  x_admin_opt_log (
   Id bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增Id',
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS  x_admin_opt_log (
   KEY Account (Account) USING BTREE,
   KEY OptName (OptName) USING BTREE,
   KEY CreateTime (CreateTime) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=0 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE IF NOT EXISTS  x_admin_role (
   Id bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增Id',
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS  x_agent (
   KEY SellerId (SellerId) USING BTREE,
   KEY ChannelId (ChannelId) USING BTREE,
   KEY CreateTime (CreateTime) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=0 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE IF NOT EXISTS  x_agent_child (
   Id bigint NOT NULL AUTO_INCREMENT COMMENT '自增Id',
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS  x_agent_child (
   KEY ChannelId (ChannelId) USING BTREE,
   KEY UserId (UserId) USING BTREE,
   KEY CreateTime (CreateTime) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=0 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE IF NOT EXISTS  x_channel (
   Id bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增Id',
@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS  x_config (
   KEY SellerId (SellerId) USING BTREE,
   KEY ChannelId (ChannelId) USING BTREE,
   KEY ConfigName (ConfigName) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=0 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE IF NOT EXISTS  x_error (
   Id bigint NOT NULL AUTO_INCREMENT,
@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS  x_error (
   ErrMsg varchar(1024)  NOT NULL,
   CreateTime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (Id) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=0 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE IF NOT EXISTS  x_seller (
   Id bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增Id',
@@ -167,17 +167,16 @@ CREATE TABLE IF NOT EXISTS  x_user (
   Id bigint unsigned NOT NULL AUTO_INCREMENT,
   SellerId int DEFAULT NULL COMMENT '运营商',
   ChannelId int DEFAULT NULL COMMENT '渠道',
-  UserId bigint DEFAULT NULL COMMENT '玩家id',
+  UserId bigint DEFAULT NULL,
   State int DEFAULT '1' COMMENT '状态 1启用,2禁用',
   Account varchar(32) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT '账号',
   Password varchar(64) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT '密码',
-  Token varchar(64) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT '最后登录token',
   NickName varchar(32) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT '昵称',
   PhoneNum varchar(32) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT '电话号码',
   Email varchar(255) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT 'Email地址',
   TopAgent int DEFAULT NULL COMMENT '顶级代理',
-  Agents text CHARACTER SET utf8mb4  COMMENT '代理',
   Agent int DEFAULT NULL COMMENT '上级代理',
+  Agents text CHARACTER SET utf8mb4  COMMENT '代理',
   CreateTime datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (Id) USING BTREE,
   UNIQUE KEY UserId (UserId) USING BTREE,
@@ -187,6 +186,33 @@ CREATE TABLE IF NOT EXISTS  x_user (
   KEY SellerId (SellerId) USING BTREE,
   KEY ChannelId (ChannelId) USING BTREE,
   KEY CreateTime (CreateTime) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=0 ROW_FORMAT=DYNAMIC;
+
+CREATE TABLE IF NOT EXISTS  x_user_dailly (
+  Id bigint NOT NULL AUTO_INCREMENT COMMENT '自增Id',
+  SellerId int DEFAULT NULL COMMENT '运营商',
+  ChannelId int DEFAULT NULL COMMENT '渠道',
+  UserId int DEFAULT NULL COMMENT '玩家Id',
+  RecordDate date DEFAULT NULL COMMENT '记录日期',
+  PRIMARY KEY (Id) USING BTREE,
+  UNIQUE KEY UserId (UserId) USING BTREE,
+  UNIQUE KEY RecordDateUserId (RecordDate,UserId) USING BTREE,
+  KEY SellerId (SellerId) USING BTREE,
+  KEY ChannelId (ChannelId) USING BTREE
+) ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
+
+CREATE TABLE IF NOT EXISTS  x_user_dynamic (
+  Id bigint NOT NULL AUTO_INCREMENT COMMENT '自增Id',
+  SellerId int DEFAULT NULL COMMENT '运营商',
+  ChannelId int DEFAULT NULL COMMENT '渠道',
+  UserId int DEFAULT NULL COMMENT '玩家Id',
+  Token varchar(64)  DEFAULT NULL COMMENT '最后登录token',
+  LoginIp varchar(64)  DEFAULT NULL COMMENT '登录Ip',
+  LoginTime datetime DEFAULT NULL COMMENT '登录时间',
+  PRIMARY KEY (Id) USING BTREE,
+  KEY SellerId (SellerId) USING BTREE,
+  KEY ChannelId (ChannelId) USING BTREE,
+  KEY UserId (UserId)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE IF NOT EXISTS  x_user_pool (
@@ -207,6 +233,7 @@ CREATE TABLE IF NOT EXISTS  x_user_score (
   Symbol varchar(32) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT '币种',
   Amount decimal(50,6) DEFAULT '0.000000' COMMENT '可用金额',
   FrozenAmount decimal(50,6) DEFAULT '0.000000' COMMENT '冻结金额',
+  BankAmount decimal(50,6) DEFAULT '0.000000' COMMENT '保险箱金额',
   CreateTime datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (Id) USING BTREE,
   UNIQUE KEY UserSymbol (UserId,Symbol) USING BTREE,
@@ -215,6 +242,29 @@ CREATE TABLE IF NOT EXISTS  x_user_score (
   KEY ChannelId (ChannelId) USING BTREE,
   KEY Symbol (Symbol) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=0 ROW_FORMAT=DYNAMIC;
+
+CREATE TABLE IF NOT EXISTS  x_user_score_log (
+  Id bigint NOT NULL AUTO_INCREMENT,
+  UserId int DEFAULT NULL,
+  Symbol varchar(32)  DEFAULT NULL,
+  Amount decimal(50,6) DEFAULT NULL,
+  BeforeAmount decimal(50,6) DEFAULT NULL,
+  AfterAmount decimal(50,6) DEFAULT NULL,
+  FrozenAmount decimal(50,6) DEFAULT NULL,
+  BeforeFrozenAmount decimal(50,6) DEFAULT NULL,
+  AfterFrozenAmount decimal(50,6) DEFAULT NULL,
+  BankAmount decimal(50,6) DEFAULT NULL,
+  BeforeBankAmount decimal(50,6) DEFAULT NULL,
+  AfterBankAmount decimal(50,6) DEFAULT NULL,
+  Reason varchar(32)  DEFAULT NULL,
+  Memo varchar(32)  DEFAULT NULL,
+  CreateTime datetime DEFAULT NULL,
+  PRIMARY KEY (Id),
+  KEY UserId (UserId),
+  KEY Symbol (Symbol),
+  KEY Reason (Reason),
+  KEY CreateTime (CreateTime)
+) ENGINE=InnoDB ;
 
 DROP PROCEDURE IF EXISTS `x_init_auth`;
 delimiter ;;
@@ -225,11 +275,11 @@ BEGIN
 	DECLARE p_Id INT DEFAULT 0;
 	DECLARE p_roledata text DEFAULT '{}';
 	DECLARE p_tablename VARCHAR(255);
-
+	
 	DECLARE cursor_seller CURSOR FOR SELECT SellerId FROM x_seller;
 	DECLARE cursor_role CURSOR FOR SELECT Id,RoleData FROM x_admin_role WHERE RoleName <> '超级管理员' AND RoleName <> '运营商超管';
 	DECLARE cursor_table CURSOR FOR SELECT DISTINCT TABLE_NAME   FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE();
-
+	
 	DECLARE CONTINUE HANDLER FOR NOT FOUND SET p_done = 1;
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
@@ -238,34 +288,37 @@ BEGIN
 		INSERT INTO x_error(FunName,ErrCode,ErrMsg)VALUES('x_init_auth',@errcode,@errmsg);
 		SELECT @errcode AS errcode,@errmsg AS errmsg;
 	END;
-
-	SET @fullauth =
+	
+	SET @fullauth = 
 	'{
 		"系统首页": { "查" : 1                              },
+		"玩家管理": { 
+			"玩家列表":   { "查": 1,"增": 1,"改": 1,"查看手机号":1,"查看邮箱":1}              
+		},
 		"系统管理": {
-			"系统设置":   { "查": 1,"增": 1,"改": 1         },
-			"渠道管理":   { "查": 1,"增": 1,"删": 1,"改": 1 },
-			"账号管理":   { "查": 1,"增": 1,"删": 1,"改": 1 },
-			"角色管理":   { "查": 1,"增": 1,"删": 1,"改": 1 },
+			"系统设置":   { "查": 1,"改": 1,"增": 1         },
+			"渠道管理":   { "查": 1,"改": 1,"增": 1,"删": 1},
+			"账号管理":   { "查": 1,"改": 1,"增": 1,"删": 1 },
+			"角色管理":   { "查": 1,"改": 1,"增": 1,"删": 1 },
 			"登录日志":   { "查": 1                         },
 			"操作日志":   { "查": 1                         }
 		}
 	}';
-
+	
 	IF NOT EXISTS(SELECT * FROM x_seller) THEN
 		INSERT INTO x_seller(SellerId,SellerName,Memo)VALUES(1,'初始运营商','自动生成');
 	END IF;
-
+	
 	IF NOT EXISTS(SELECT * FROM x_channel) THEN
 		INSERT INTO x_seller(SellerId,ChannelId,ChannelName,Memo)VALUES(1,2,'初始渠道','自动生成');
 	END IF;
-
+	
 	UPDATE x_admin_role SET RoleData = @fullauth WHERE RoleName = '超级管理员' OR RoleName = '运营商超管';
-
+	
 	IF NOT EXISTS(SELECT * FROM x_admin_role WHERE RoleName = '超级管理员') THEN
 		INSERT INTO x_admin_role(SellerId,Parent,RoleName,RoleData)VALUES(-1,'god','超级管理员',@fullauth);
 	END IF;
-
+	
 	OPEN cursor_seller;
     seller_loop: LOOP
 		SET p_done = 0;
@@ -276,13 +329,13 @@ BEGIN
 		IF NOT EXISTS(SELECT * FROM x_admin_role WHERE SellerId = p_sellerid AND RoleName = '运营商超管') THEN
 			INSERT INTO x_admin_role(SellerId,Parent,RoleName,RoleData)VALUES(p_sellerid,'god','运营商超管',@fullauth);
 		END IF;
-
+		
 		IF NOT EXISTS(SELECT * FROM x_admin_user WHERE SellerId = p_sellerid) THEN
 			INSERT INTO x_admin_user(SellerId,Account,`Password`,RoleName)VALUES(p_sellerid,CONCAT('admin',p_sellerid),MD5(MD5('admin')),'运营商超管');
 		END IF;
     END LOOP;
     CLOSE cursor_seller;
-
+	
 	SET @tmpauth = '{}';
 	SET @authkeys = JSON_KEYS(@fullauth);
 	SET @idx = 0;
@@ -300,7 +353,7 @@ BEGIN
 		END WHILE;
 		SET @idx = @idx + 1;
 	END WHILE;
-
+	
 	SET @finalauth = '{}';
 	SET @authkeys = JSON_KEYS(@tmpauth);
 	SET @idx = 0;
@@ -323,9 +376,9 @@ BEGIN
 		END IF;
 		SET @idx = @idx + 1;
 	END WHILE;
-
+	
 	SET @authkeys = JSON_KEYS(@finalauth);
-
+	
 	OPEN cursor_role;
     role_loop: LOOP
 		SET p_done = 0;
@@ -333,7 +386,7 @@ BEGIN
         IF p_done THEN
             LEAVE role_loop;
         END IF;
-
+	
 		SET @idx = 0;
 		WHILE @idx < JSON_LENGTH(@authkeys) DO
 			SET @keyname = JSON_EXTRACT(@authkeys, CONCAT('$[',@idx,']'));
@@ -348,7 +401,7 @@ BEGIN
 		UPDATE x_admin_role SET RoleData = p_roledata where Id = p_Id;
     END LOOP;
     CLOSE cursor_role;
-
+	
 	OPEN cursor_table;
     table_loop: LOOP
 		SET p_done = 0;
@@ -356,14 +409,14 @@ BEGIN
         IF p_done THEN
             LEAVE table_loop;
         END IF;
-
+		
 		IF p_tablename <> 'x_error' AND p_tablename <> 'x_user_pool' THEN
 			IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = p_tablename AND COLUMN_NAME = 'SellerId' AND TABLE_SCHEMA = DATABASE()) THEN
 				SELECT CONCAT(p_tablename, ' is missing SellerId') AS 'Warning';
 				LEAVE table_loop;
 			END IF;
 		END IF;
-
+		
 		IF p_tablename <> 'x_admin_role' AND  p_tablename <> 'x_error' AND  p_tablename <> 'x_seller' AND p_tablename <> 'x_user_pool' THEN
 			IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS  WHERE TABLE_NAME = p_tablename AND COLUMN_NAME = 'ChannelId' AND TABLE_SCHEMA = DATABASE()) THEN
 				SELECT CONCAT(p_tablename, ' is missing ChannelId') AS 'Warning';
@@ -371,21 +424,213 @@ BEGIN
 			END IF;
 		END IF;
     END LOOP;
-    CLOSE cursor_table;
-
-
-
-
-
-
-
-
-
-
-
-
-
+    CLOSE cursor_table;	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 END
 ;;
 delimiter ;
 
+/*
+type Muban struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	UserId int `gorm:"column:UserId"`
+	CreateTime string `gorm:"column:CreateTime"`
+	Abc string `gorm:"column:Abc"`
+}
+
+type XAdminLoginLog struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	Account string `gorm:"column:Account"`
+	Token string `gorm:"column:Token"`
+	LoginIp string `gorm:"column:LoginIp"`
+	Memo string `gorm:"column:Memo"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XAdminOptLog struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	Account string `gorm:"column:Account"`
+	OptName string `gorm:"column:OptName"`
+	ReqPath string `gorm:"column:ReqPath"`
+	ReqData string `gorm:"column:ReqData"`
+	Ip string `gorm:"column:Ip"`
+	Memo string `gorm:"column:Memo"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XAdminRole struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	RoleName string `gorm:"column:RoleName"`
+	Parent string `gorm:"column:Parent"`
+	RoleData string `gorm:"column:RoleData"`
+	State int `gorm:"column:State"`
+	Memo string `gorm:"column:Memo"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XAdminUser struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	Account string `gorm:"column:Account"`
+	Password string `gorm:"column:Password"`
+	RoleName string `gorm:"column:RoleName"`
+	LoginGoogle string `gorm:"column:LoginGoogle"`
+	OptGoogle string `gorm:"column:OptGoogle"`
+	State int `gorm:"column:State"`
+	Token string `gorm:"column:Token"`
+	LoginCount int `gorm:"column:LoginCount"`
+	LoginTime string `gorm:"column:LoginTime"`
+	LoginIp string `gorm:"column:LoginIp"`
+	Memo string `gorm:"column:Memo"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XAgent struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	UserId int `gorm:"column:UserId"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XAgentChild struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	UserId int `gorm:"column:UserId"`
+	ChildId int `gorm:"column:ChildId"`
+	ChildLevel int `gorm:"column:ChildLevel"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XChannel struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	State int `gorm:"column:State"`
+	ChannelName string `gorm:"column:ChannelName"`
+	Memo string `gorm:"column:Memo"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XConfig struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	ConfigName string `gorm:"column:ConfigName"`
+	ConfigValue string `gorm:"column:ConfigValue"`
+	ForClient int `gorm:"column:ForClient"`
+	Memo string `gorm:"column:Memo"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XError struct {
+	Id int `gorm:"column:Id"`
+	FunName string `gorm:"column:FunName"`
+	ErrCode int `gorm:"column:ErrCode"`
+	ErrMsg string `gorm:"column:ErrMsg"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XSeller struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	State int `gorm:"column:State"`
+	SellerName string `gorm:"column:SellerName"`
+	Memo string `gorm:"column:Memo"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XUser struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	UserId int `gorm:"column:UserId"`
+	State int `gorm:"column:State"`
+	Account string `gorm:"column:Account"`
+	Password string `gorm:"column:Password"`
+	NickName string `gorm:"column:NickName"`
+	PhoneNum string `gorm:"column:PhoneNum"`
+	Email string `gorm:"column:Email"`
+	TopAgent int `gorm:"column:TopAgent"`
+	Agent int `gorm:"column:Agent"`
+	Agents string `gorm:"column:Agents"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XUserDailly struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	UserId int `gorm:"column:UserId"`
+	RecordDate string `gorm:"column:RecordDate"`
+}
+
+type XUserDynamic struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	UserId int `gorm:"column:UserId"`
+	Token string `gorm:"column:Token"`
+	LoginIp string `gorm:"column:LoginIp"`
+	LoginTime string `gorm:"column:LoginTime"`
+}
+
+type XUserPool struct {
+	UserId int `gorm:"column:UserId"`
+	State int `gorm:"column:State"`
+	Ip string `gorm:"column:Ip"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XUserScore struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	UserId int `gorm:"column:UserId"`
+	Symbol string `gorm:"column:Symbol"`
+	Amount float64 `gorm:"column:Amount"`
+	FrozenAmount float64 `gorm:"column:FrozenAmount"`
+	BankAmount float64 `gorm:"column:BankAmount"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XUserScoreLog struct {
+	Id int `gorm:"column:Id"`
+	UserId int `gorm:"column:UserId"`
+	Symbol string `gorm:"column:Symbol"`
+	Amount float64 `gorm:"column:Amount"`
+	BeforeAmount float64 `gorm:"column:BeforeAmount"`
+	AfterAmount float64 `gorm:"column:AfterAmount"`
+	FrozenAmount float64 `gorm:"column:FrozenAmount"`
+	BeforeFrozenAmount float64 `gorm:"column:BeforeFrozenAmount"`
+	AfterFrozenAmount float64 `gorm:"column:AfterFrozenAmount"`
+	BankAmount float64 `gorm:"column:BankAmount"`
+	BeforeBankAmount float64 `gorm:"column:BeforeBankAmount"`
+	AfterBankAmount float64 `gorm:"column:AfterBankAmount"`
+	Reason string `gorm:"column:Reason"`
+	Memo string `gorm:"column:Memo"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+*/
