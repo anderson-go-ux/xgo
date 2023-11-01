@@ -59,6 +59,10 @@ func (this *XDb) conn() *sql.DB {
 	return this.db.DB()
 }
 
+func (this *XDb) Gorm() *gorm.DB {
+	return this.db
+}
+
 // 获取XDbTable
 func (this *XDb) Table(name string) *XDbTable {
 	table := XDbTable{db: this, tablename: strings.Split(name, ",")}

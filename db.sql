@@ -188,6 +188,31 @@ CREATE TABLE IF NOT EXISTS  x_user (
   KEY CreateTime (CreateTime) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=0 ROW_FORMAT=DYNAMIC;
 
+CREATE TABLE IF NOT EXISTS  x_user_copy1 (
+  Id bigint unsigned NOT NULL AUTO_INCREMENT,
+  SellerId int DEFAULT NULL COMMENT '运营商',
+  ChannelId int DEFAULT NULL COMMENT '渠道',
+  UserId bigint DEFAULT NULL,
+  State int DEFAULT '1' COMMENT '状态 1启用,2禁用',
+  Account varchar(32) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT '账号',
+  Password varchar(64) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT '密码',
+  NickName varchar(32) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT '昵称',
+  PhoneNum varchar(32) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT '电话号码',
+  Email varchar(255) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT 'Email地址',
+  TopAgent int DEFAULT NULL COMMENT '顶级代理',
+  Agent int DEFAULT NULL COMMENT '上级代理',
+  Agents text CHARACTER SET utf8mb4  COMMENT '代理',
+  CreateTime datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (Id) USING BTREE,
+  UNIQUE KEY UserId (UserId) USING BTREE,
+  UNIQUE KEY SellerChannelAccount (SellerId,ChannelId,Account) USING BTREE,
+  UNIQUE KEY PhoneNum (PhoneNum) USING BTREE,
+  UNIQUE KEY Email (Email) USING BTREE,
+  KEY SellerId (SellerId) USING BTREE,
+  KEY ChannelId (ChannelId) USING BTREE,
+  KEY CreateTime (CreateTime) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=0 ROW_FORMAT=DYNAMIC;
+
 CREATE TABLE IF NOT EXISTS  x_user_dailly (
   Id bigint NOT NULL AUTO_INCREMENT COMMENT '自增Id',
   SellerId int DEFAULT NULL COMMENT '运营商',
@@ -275,11 +300,11 @@ BEGIN
 	DECLARE p_Id INT DEFAULT 0;
 	DECLARE p_roledata text DEFAULT '{}';
 	DECLARE p_tablename VARCHAR(255);
-	
+
 	DECLARE cursor_seller CURSOR FOR SELECT SellerId FROM x_seller;
 	DECLARE cursor_role CURSOR FOR SELECT Id,RoleData FROM x_admin_role WHERE RoleName <> '超级管理员' AND RoleName <> '运营商超管';
 	DECLARE cursor_table CURSOR FOR SELECT DISTINCT TABLE_NAME   FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE();
-	
+
 	DECLARE CONTINUE HANDLER FOR NOT FOUND SET p_done = 1;
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
@@ -288,12 +313,12 @@ BEGIN
 		INSERT INTO x_error(FunName,ErrCode,ErrMsg)VALUES('x_init_auth',@errcode,@errmsg);
 		SELECT @errcode AS errcode,@errmsg AS errmsg;
 	END;
-	
-	SET @fullauth = 
+
+	SET @fullauth =
 	'{
 		"系统首页": { "查" : 1                              },
-		"玩家管理": { 
-			"玩家列表":   { "查": 1,"增": 1,"改": 1,"查看手机号":1,"查看邮箱":1}              
+		"玩家管理": {
+			"玩家列表":   { "查": 1,"增": 1,"改": 1,"查看手机号":1,"查看邮箱":1}
 		},
 		"系统管理": {
 			"系统设置":   { "查": 1,"改": 1,"增": 1         },
@@ -304,21 +329,21 @@ BEGIN
 			"操作日志":   { "查": 1                         }
 		}
 	}';
-	
+
 	IF NOT EXISTS(SELECT * FROM x_seller) THEN
 		INSERT INTO x_seller(SellerId,SellerName,Memo)VALUES(1,'初始运营商','自动生成');
 	END IF;
-	
+
 	IF NOT EXISTS(SELECT * FROM x_channel) THEN
 		INSERT INTO x_seller(SellerId,ChannelId,ChannelName,Memo)VALUES(1,2,'初始渠道','自动生成');
 	END IF;
-	
+
 	UPDATE x_admin_role SET RoleData = @fullauth WHERE RoleName = '超级管理员' OR RoleName = '运营商超管';
-	
+
 	IF NOT EXISTS(SELECT * FROM x_admin_role WHERE RoleName = '超级管理员') THEN
 		INSERT INTO x_admin_role(SellerId,Parent,RoleName,RoleData)VALUES(-1,'god','超级管理员',@fullauth);
 	END IF;
-	
+
 	OPEN cursor_seller;
     seller_loop: LOOP
 		SET p_done = 0;
@@ -329,13 +354,13 @@ BEGIN
 		IF NOT EXISTS(SELECT * FROM x_admin_role WHERE SellerId = p_sellerid AND RoleName = '运营商超管') THEN
 			INSERT INTO x_admin_role(SellerId,Parent,RoleName,RoleData)VALUES(p_sellerid,'god','运营商超管',@fullauth);
 		END IF;
-		
+
 		IF NOT EXISTS(SELECT * FROM x_admin_user WHERE SellerId = p_sellerid) THEN
 			INSERT INTO x_admin_user(SellerId,Account,`Password`,RoleName)VALUES(p_sellerid,CONCAT('admin',p_sellerid),MD5(MD5('admin')),'运营商超管');
 		END IF;
     END LOOP;
     CLOSE cursor_seller;
-	
+
 	SET @tmpauth = '{}';
 	SET @authkeys = JSON_KEYS(@fullauth);
 	SET @idx = 0;
@@ -353,7 +378,7 @@ BEGIN
 		END WHILE;
 		SET @idx = @idx + 1;
 	END WHILE;
-	
+
 	SET @finalauth = '{}';
 	SET @authkeys = JSON_KEYS(@tmpauth);
 	SET @idx = 0;
@@ -376,9 +401,9 @@ BEGIN
 		END IF;
 		SET @idx = @idx + 1;
 	END WHILE;
-	
+
 	SET @authkeys = JSON_KEYS(@finalauth);
-	
+
 	OPEN cursor_role;
     role_loop: LOOP
 		SET p_done = 0;
@@ -386,7 +411,7 @@ BEGIN
         IF p_done THEN
             LEAVE role_loop;
         END IF;
-	
+
 		SET @idx = 0;
 		WHILE @idx < JSON_LENGTH(@authkeys) DO
 			SET @keyname = JSON_EXTRACT(@authkeys, CONCAT('$[',@idx,']'));
@@ -401,7 +426,7 @@ BEGIN
 		UPDATE x_admin_role SET RoleData = p_roledata where Id = p_Id;
     END LOOP;
     CLOSE cursor_role;
-	
+
 	OPEN cursor_table;
     table_loop: LOOP
 		SET p_done = 0;
@@ -409,14 +434,14 @@ BEGIN
         IF p_done THEN
             LEAVE table_loop;
         END IF;
-		
+
 		IF p_tablename <> 'x_error' AND p_tablename <> 'x_user_pool' THEN
 			IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = p_tablename AND COLUMN_NAME = 'SellerId' AND TABLE_SCHEMA = DATABASE()) THEN
 				SELECT CONCAT(p_tablename, ' is missing SellerId') AS 'Warning';
 				LEAVE table_loop;
 			END IF;
 		END IF;
-		
+
 		IF p_tablename <> 'x_admin_role' AND  p_tablename <> 'x_error' AND  p_tablename <> 'x_seller' AND p_tablename <> 'x_user_pool' THEN
 			IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS  WHERE TABLE_NAME = p_tablename AND COLUMN_NAME = 'ChannelId' AND TABLE_SCHEMA = DATABASE()) THEN
 				SELECT CONCAT(p_tablename, ' is missing ChannelId') AS 'Warning';
@@ -424,20 +449,20 @@ BEGIN
 			END IF;
 		END IF;
     END LOOP;
-    CLOSE cursor_table;	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+    CLOSE cursor_table;
+
+
+
+
+
+
+
+
+
+
+
+
+
 END
 ;;
 delimiter ;
@@ -562,6 +587,23 @@ type XSeller struct {
 }
 
 type XUser struct {
+	Id int `gorm:"column:Id"`
+	SellerId int `gorm:"column:SellerId"`
+	ChannelId int `gorm:"column:ChannelId"`
+	UserId int `gorm:"column:UserId"`
+	State int `gorm:"column:State"`
+	Account string `gorm:"column:Account"`
+	Password string `gorm:"column:Password"`
+	NickName string `gorm:"column:NickName"`
+	PhoneNum string `gorm:"column:PhoneNum"`
+	Email string `gorm:"column:Email"`
+	TopAgent int `gorm:"column:TopAgent"`
+	Agent int `gorm:"column:Agent"`
+	Agents string `gorm:"column:Agents"`
+	CreateTime string `gorm:"column:CreateTime"`
+}
+
+type XUserCopy1 struct {
 	Id int `gorm:"column:Id"`
 	SellerId int `gorm:"column:SellerId"`
 	ChannelId int `gorm:"column:ChannelId"`
