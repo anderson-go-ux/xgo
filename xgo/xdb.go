@@ -75,8 +75,24 @@ func (this *XDb) Database() string {
 }
 
 // 开始事务
-func (this *XDb) BeginTransaction() (*sql.Tx, error) {
-	return this.db.DB().Begin()
+func (this *XDb) Transaction(fc func(*sql.Tx) error) {
+	tx, err := this.db.DB().Begin()
+	if err != nil {
+		logs.Error("transaction error:", err)
+		return
+	}
+	var fcerr error
+	paniced := true
+	defer func() {
+		if paniced || fcerr != nil {
+			tx.Rollback()
+		}
+	}()
+	fcerr = fc(tx)
+	if fcerr == nil {
+		tx.Commit()
+	}
+	paniced = false
 }
 
 // 调用存储过程 eg: proc_test(int,int)  CallProcedure("proc_test",1,2)

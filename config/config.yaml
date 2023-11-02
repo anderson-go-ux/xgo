@@ -12,7 +12,7 @@ server:
     host: 127.0.0.1
     port: 3306
     user: root
-    password: root
+    password: root123456
     database: x_test
     connmaxidletime: 20 #最大待机时间
     connmaxlifetime: 25 #连接最长生命周期
