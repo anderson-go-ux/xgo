@@ -10,4 +10,7 @@ git pull
 git add *
 git commit -m "auto commit"
 
-echo "Current version: $v1.$v2.$v3"
+git tag -a $v1.$v2.$v3 -m "auto tag"
+git push origin $v1.$v2.$v3
+
+echo $v1.$v2.$v3 > version.txt
