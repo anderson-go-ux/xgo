@@ -28,6 +28,16 @@ type XDb struct {
 	logmode         bool
 }
 
+type XTx struct {
+	Db *XDb
+	Tx *sql.Tx
+}
+
+func (this *XTx) Table(table string) *XDbTable {
+	t := this.Db.Table(table).Tx(this.Tx)
+	return t
+}
+
 // 初始化db
 func (this *XDb) Init(cfgname string) {
 	this.user = GetConfigString(fmt.Sprint(cfgname, ".user"), true, "")
@@ -75,7 +85,7 @@ func (this *XDb) Database() string {
 }
 
 // 开始事务
-func (this *XDb) Transaction(fc func(*sql.Tx) error) {
+func (this *XDb) Transaction(fc func(*XTx) error) {
 	tx, err := this.db.DB().Begin()
 	if err != nil {
 		logs.Error("transaction error:", err)
@@ -88,7 +98,8 @@ func (this *XDb) Transaction(fc func(*sql.Tx) error) {
 			tx.Rollback()
 		}
 	}()
-	fcerr = fc(tx)
+	xtx := &XTx{Db: this, Tx: tx}
+	fcerr = fc(xtx)
 	if fcerr == nil {
 		tx.Commit()
 	}

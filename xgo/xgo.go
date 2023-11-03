@@ -55,7 +55,7 @@ var TimeLayout string = "2006-01-02 15:04:05"
 var DateLayout string = "2006-01-02"
 
 // 通用map定义
-type H map[string]any
+type H map[string]interface{}
 
 // 初始化
 func Init() {
@@ -440,6 +440,53 @@ func BackupDb(db *XDb, path string) {
 	write := bufio.NewWriter(file)
 	write.WriteString(strall)
 	write.Flush()
+}
+
+func ShowTable(db *XDb, tablename string) {
+	otn := tablename
+	td, _ := db.Query(fmt.Sprintf("DESCRIBE %v", tablename))
+	strall := ""
+	words := strings.Split(tablename, "_")
+	for i, word := range words {
+		words[i] = strings.Title(word)
+	}
+	tablename = strings.Join(words, "")
+	strall += fmt.Sprintf("type %v struct {\r\n", tablename)
+	td.ForEach(func(xd *XMap) bool {
+		sname := xd.String("Type")
+		tname := ""
+		if strings.Index(sname, "int") == 0 || strings.Index(sname, "bigint") == 0 || strings.Index(sname, "unsigned") == 0 || strings.Index(sname, "timestamp") == 0 {
+			tname = "int"
+		} else if strings.Index(sname, "varchar") == 0 || strings.Index(sname, "datetime") == 0 || strings.Index(sname, "date") == 0 || strings.Index(sname, "text") == 0 {
+			tname = "string"
+		} else if strings.Index(sname, "decimal") == 0 {
+			tname = "float64"
+		}
+
+		field := xd.String("Field")
+		sql := `SELECT column_name, column_comment FROM information_schema.columns WHERE table_name = '%s' AND table_schema = '%s' and column_name = '%s';`
+		sql = fmt.Sprintf(sql, otn, db.Database(), field)
+		sd, _ := db.Query(sql)
+		comment := sd.Index(0).String("COLUMN_COMMENT")
+		strall += fmt.Sprintf("\t%v %v `gorm:\"column:%v\" json:\"%v\"` // %s\r\n", field, tname, field, field, comment)
+		return true
+	})
+	strall += "}\r\n\r\n"
+	strall += fmt.Sprintf(`func (this *XConfig) TableName() string {
+	return "%s"
+}
+`, otn)
+	strall += "\r\n\r\n"
+	filePath := fmt.Sprintf("%s.txt", tablename)
+	file, err := os.Create(filePath)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	_, err = file.Write([]byte(strall))
+	if err != nil {
+		return
+	}
 }
 
 // des cbc解密

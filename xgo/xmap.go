@@ -134,3 +134,13 @@ func (this *XMap) Exists(field string) bool {
 	_, ok := this.RawData[field]
 	return ok
 }
+
+
+//字段是否存在
+func (this *XMap) ToObject(data any)  {
+	if this.RawData == nil {
+		return
+	}
+	jdata, _ := json.Marshal(this.RawData)
+	json.Unmarshal(jdata, data)
+}
