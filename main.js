@@ -37,6 +37,7 @@ child.stdout.on('data', function (data) {
 	process.stdout.write(data)
 })
 function rewrite(filename) {
+	child.kill(9)
 	let filedata = fs.readFileSync(filename, 'utf-8')
 	fs.writeFileSync(filename, filedata)
 }
