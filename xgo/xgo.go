@@ -426,12 +426,14 @@ func BackupDb(db *XDb, path string) {
 		td.ForEach(func(xd *XMap) bool {
 			sname := xd.String("Type")
 			tname := ""
-			if strings.Index(sname, "int") == 0 || strings.Index(sname, "bigint") == 0 || strings.Index(sname, "unsigned") == 0 || strings.Index(sname, "timestamp") == 0 {
-				tname = "int"
-			} else if strings.Index(sname, "varchar") == 0 || strings.Index(sname, "datetime") == 0 || strings.Index(sname, "date") == 0 || strings.Index(sname, "text") == 0 {
+			if strings.Index(sname, "int") >= 0 || strings.Index(sname, "unsigned") >= 0 || strings.Index(sname, "timestamp") >= 0 {
+				tname = "int64"
+			} else if strings.Index(sname, "char") >= 0 || strings.Index(sname, "date") >= 0 || strings.Index(sname, "text") >= 0 {
 				tname = "string"
-			} else if strings.Index(sname, "decimal") == 0 || strings.Index(sname, "double") == 0 {
+			} else if strings.Index(sname, "decimal") >= 0 || strings.Index(sname, "double") >= 0 || strings.Index(sname, "float") >= 0 {
 				tname = "float64"
+			} else if strings.Index(sname, "blob") >= 0 {
+				tname = "[]byte"
 			}
 			strall += fmt.Sprintf("\t%v %v `gorm:\"column:%v\"`\r\n", xd.String("Field"), tname, xd.String("Field"))
 			return true
