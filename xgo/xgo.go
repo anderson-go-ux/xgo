@@ -364,6 +364,7 @@ func BackupDb(db *XDb, path string) {
 	tabledata.ForEach(func(xd *XMap) bool {
 		for k, v := range *xd.Map() {
 			if strings.Index(k, "Tables_in_") >= 0 {
+				logs.Debug("backup table:", v.(string))
 				tables = append(tables, v.(string))
 				td, _ := db.Query(fmt.Sprint("show create table ", v))
 				s := td.Index(0).String("Create Table")
@@ -388,7 +389,6 @@ func BackupDb(db *XDb, path string) {
 				s = strings.Replace(s, "  ROW_", " ROW_", -1)
 				s += ";\r\n\r\n"
 				strall += s
-
 			}
 		}
 		return true
@@ -396,6 +396,7 @@ func BackupDb(db *XDb, path string) {
 	procdata, _ := db.Query(`SHOW PROCEDURE STATUS LIKE "%x_%"`)
 	procdata.ForEach(func(xd *XMap) bool {
 		if xd.String("Db") == db.database {
+			logs.Debug("backup procedure:", xd.String("Name"))
 			strall += fmt.Sprintf("DROP PROCEDURE IF EXISTS `%s`;\r\ndelimiter ;;\r\n", xd.String("Name"))
 			createdata, _ := db.Query(fmt.Sprintf("SHOW CREATE PROCEDURE %v", xd.String("Name")))
 			createsql := createdata.Index(0).String("Create Procedure")
@@ -412,8 +413,10 @@ func BackupDb(db *XDb, path string) {
 
 	strall += "/*\r\n"
 	for i := 0; i < len(tables); i++ {
+		logs.Debug("backup table struct:", tables[i])
 		td, _ := db.Query(fmt.Sprintf("DESCRIBE %v", tables[i]))
 		tname := tables[i]
+		otn := tname
 		words := strings.Split(tname, "_")
 		for i, word := range words {
 			words[i] = strings.Title(word)
@@ -427,16 +430,22 @@ func BackupDb(db *XDb, path string) {
 				tname = "int"
 			} else if strings.Index(sname, "varchar") == 0 || strings.Index(sname, "datetime") == 0 || strings.Index(sname, "date") == 0 || strings.Index(sname, "text") == 0 {
 				tname = "string"
-			} else if strings.Index(sname, "decimal") == 0 {
+			} else if strings.Index(sname, "decimal") == 0 || strings.Index(sname, "double") == 0 {
 				tname = "float64"
 			}
 			strall += fmt.Sprintf("\t%v %v `gorm:\"column:%v\"`\r\n", xd.String("Field"), tname, xd.String("Field"))
 			return true
 		})
 		strall += "}\r\n\r\n"
+		strall += fmt.Sprintf(`func (this *%s) TableName() string {
+	return "%s"
+}
+`, tname, otn)
+		strall += "\r\n\r\n"
 	}
 	strall += "*/\r\n"
-	file, _ := os.OpenFile(path, os.O_TRUNC|os.O_CREATE, 0666)
+	logs.Debug("backup finished")
+	file, _ := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
 	write := bufio.NewWriter(file)
 	write.WriteString(strall)
 	write.Flush()
@@ -455,12 +464,14 @@ func ShowTable(db *XDb, tablename string) {
 	td.ForEach(func(xd *XMap) bool {
 		sname := xd.String("Type")
 		tname := ""
-		if strings.Index(sname, "int") == 0 || strings.Index(sname, "bigint") == 0 || strings.Index(sname, "unsigned") == 0 || strings.Index(sname, "timestamp") == 0 {
-			tname = "int"
-		} else if strings.Index(sname, "varchar") == 0 || strings.Index(sname, "datetime") == 0 || strings.Index(sname, "date") == 0 || strings.Index(sname, "text") == 0 {
+		if strings.Index(sname, "int") >= 0 || strings.Index(sname, "unsigned") >= 0 || strings.Index(sname, "timestamp") >= 0 {
+			tname = "int64"
+		} else if strings.Index(sname, "char") >= 0 || strings.Index(sname, "date") >= 0 || strings.Index(sname, "text") >= 0 {
 			tname = "string"
-		} else if strings.Index(sname, "decimal") == 0 {
+		} else if strings.Index(sname, "decimal") >= 0 || strings.Index(sname, "double") >= 0 || strings.Index(sname, "float") >= 0 {
 			tname = "float64"
+		} else if strings.Index(sname, "blob") >= 0 {
+			tname = "[]byte"
 		}
 
 		field := xd.String("Field")
@@ -472,10 +483,10 @@ func ShowTable(db *XDb, tablename string) {
 		return true
 	})
 	strall += "}\r\n\r\n"
-	strall += fmt.Sprintf(`func (this *XConfig) TableName() string {
+	strall += fmt.Sprintf(`func (this *%s) TableName() string {
 	return "%s"
 }
-`, otn)
+`, tablename, otn)
 	strall += "\r\n\r\n"
 	filePath := fmt.Sprintf("%s.txt", tablename)
 	file, err := os.Create(filePath)

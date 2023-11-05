@@ -15,5 +15,7 @@ func main() {
 	http.Init("server.http", redis)
 	http.InitWs("/sapi/ws")
 	xgo.AdminInit(http, db, redis)
+	//xgo.BackupDb(db, "abc.sql")
+	//xgo.ShowTable(db, "x_aatest")
 	xgo.Run()
 }

@@ -8,7 +8,7 @@ server:
   rpc:
     port: 7564 #prc监听端口
     test: 127.0.0.1:7564
-  db:
+  dbx:
     host: 127.0.0.1
     port: 3306
     user: root
@@ -19,6 +19,17 @@ server:
     connmaxidle: 10 #最大等待连接数
     connmaxopen: 100 #最大打开连接数
     logmode: true
+  db:
+    host: 10.10.234.35
+    port: 14578
+    user: userbu
+    password: aw9#gf*S7fT1P
+    database: x_hash_game
+    connmaxidletime: 20 #最大待机时间
+    connmaxlifetime: 25 #连接最长生命周期
+    connmaxidle: 10 #最大等待连接数
+    connmaxopen: 100 #最大打开连接数
+    logmode: false
   redis:
     host: 127.0.0.1
     port: 6379
