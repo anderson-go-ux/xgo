@@ -521,7 +521,7 @@ func (this *XRedis) RPop(key string) ([]byte, error) {
 	key = fmt.Sprintf("%v:%v", project, key)
 	conn := this.redispool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("lpop", key)
+	ret, err := conn.Do("rpop", key)
 	if err != nil {
 		logs.Error(err.Error())
 		return nil, err
