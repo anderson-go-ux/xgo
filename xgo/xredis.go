@@ -585,7 +585,7 @@ func (this *XRedis) LRange(key string, start int, end int) ([]string, error) {
 	conn := this.redispool.Get()
 	defer conn.Close()
 	retarr := []string{}
-	ret, err := conn.Do("lrange", key)
+	ret, err := conn.Do("lrange", key, start, end)
 	if err != nil {
 		logs.Error(err.Error())
 		return retarr, err
