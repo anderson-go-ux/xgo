@@ -28,6 +28,16 @@ type XDb struct {
 	logmode         bool
 }
 
+type XTx struct {
+	Db *XDb
+	Tx *sql.Tx
+}
+
+func (this *XTx) Table(table string) *XDbTable {
+	t := this.Db.Table(table).Tx(this.Tx)
+	return t
+}
+
 // 初始化db
 func (this *XDb) Init(cfgname string) {
 	this.user = GetConfigString(fmt.Sprint(cfgname, ".user"), true, "")
@@ -75,8 +85,25 @@ func (this *XDb) Database() string {
 }
 
 // 开始事务
-func (this *XDb) BeginTransaction() (*sql.Tx, error) {
-	return this.db.DB().Begin()
+func (this *XDb) Transaction(fc func(*XTx) error) {
+	tx, err := this.db.DB().Begin()
+	if err != nil {
+		logs.Error("transaction error:", err)
+		return
+	}
+	var fcerr error
+	paniced := true
+	defer func() {
+		if paniced || fcerr != nil {
+			tx.Rollback()
+		}
+	}()
+	xtx := &XTx{Db: this, Tx: tx}
+	fcerr = fc(xtx)
+	if fcerr == nil {
+		tx.Commit()
+	}
+	paniced = false
 }
 
 // 调用存储过程 eg: proc_test(int,int)  CallProcedure("proc_test",1,2)

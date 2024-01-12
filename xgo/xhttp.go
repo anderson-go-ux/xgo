@@ -150,7 +150,7 @@ func (ctx *XHttpContent) RespErr(data ...interface{}) {
 	ctx.gin.JSON(http.StatusOK, resp)
 }
 
-func abuhttpcors() gin.HandlerFunc {
+func httpcors() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		method := context.Request.Method
 		context.Header("Access-Control-Allow-Origin", "*")
@@ -170,7 +170,7 @@ func (this *XHttp) Init(cfgname string, token *XRedis) {
 	this.token = token
 	this.port = int(GetConfigInt(cfgname+".port", true, 0))
 	this.gin = gin.New()
-	this.gin.Use(abuhttpcors())
+	this.gin.Use(httpcors())
 	go func() {
 		bind := fmt.Sprint("0.0.0.0:", this.port)
 		this.gin.Run(bind)

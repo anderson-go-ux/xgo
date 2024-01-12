@@ -4,3 +4,4 @@
 .DS_Store
 /reload.js
 /zexport.json
+.vscode/launch.json
