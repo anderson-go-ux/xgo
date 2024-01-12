@@ -592,7 +592,7 @@ func (this *XRedis) LRange(key string, start int, end int) ([]string, error) {
 	}
 	arr := ret.([]interface{})
 
-	for i := 0; i > len(arr); i++ {
+	for i := 0; i < len(arr); i++ {
 		retarr = append(retarr, string(arr[i].([]byte)))
 	}
 	return retarr, nil
