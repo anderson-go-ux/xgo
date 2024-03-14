@@ -514,6 +514,9 @@ func (this *XRedis) LPop(key string) ([]byte, error) {
 		logs.Error(err.Error())
 		return nil, err
 	}
+	if ret == nil {
+		return nil, nil
+	}
 	return ret.([]byte), nil
 }
 
@@ -525,6 +528,9 @@ func (this *XRedis) RPop(key string) ([]byte, error) {
 	if err != nil {
 		logs.Error(err.Error())
 		return nil, err
+	}
+	if ret == nil {
+		return nil, nil
 	}
 	return ret.([]byte), nil
 }
