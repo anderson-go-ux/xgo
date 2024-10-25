@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/beego/beego/logs"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
+	_ "gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 type XDb struct {

@@ -43,7 +43,7 @@ go get github.com/garyburd/redigo/redis
 go get github.com/go-sql-driver/mysql
 go get github.com/satori/go.uuid
 go get github.com/gorilla/websocket
-go get github.com/jinzhu/gorm
+go get gorm.io/gorm
 go get github.com/imroc/req
 go get github.com/go-playground/validator/v10
 go get github.com/go-playground/universal-translator
