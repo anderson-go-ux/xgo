@@ -1,4 +1,4 @@
-module github.com/zhms/xgo
+module github.com/anderson-go-ux/xgo
 
 go 1.22.0
 
