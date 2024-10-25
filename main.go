@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/zhms/xgo/xgo"
+	"github.com/anderson-go-ux/xgo/xgo"
 )
 
 var db *xgo.XDb = &xgo.XDb{}
