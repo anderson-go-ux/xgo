@@ -1,4 +1,4 @@
-package xgo
+package main
 
 import (
 	"github.com/anderson-go-ux/xgo/xgo"

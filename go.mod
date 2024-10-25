@@ -2,8 +2,6 @@ module github.com/anderson-go-ux/xgo
 
 go 1.22.0
 
-toolchain go1.23.2
-
 require (
 	github.com/beego/beego v1.12.14
 	github.com/gin-gonic/gin v1.10.0
