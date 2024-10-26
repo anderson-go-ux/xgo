@@ -55,11 +55,13 @@ func (this *XDb) Init(cfgname string) {
 		logs.Error(err)
 		panic(err)
 	}
+	this.db = db
+
 	this.conn().SetMaxIdleConns(this.connmaxidle)
 	this.conn().SetMaxOpenConns(this.connmaxopen)
 	this.conn().SetConnMaxIdleTime(time.Second * time.Duration(this.connmaxidletime))
 	this.conn().SetConnMaxLifetime(time.Second * time.Duration(this.connmaxlifetime))
-	this.db = db
+
 	this.logmode = viper.GetBool(fmt.Sprint(cfgname, ".logmode"))
 	if this.logmode {
 		this.db = this.db.Debug()
