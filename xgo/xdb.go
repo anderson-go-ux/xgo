@@ -10,7 +10,7 @@ import (
 
 	"github.com/beego/beego/logs"
 	"github.com/spf13/viper"
-	_ "gorm.io/driver/mysql"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -49,24 +49,31 @@ func (this *XDb) Init(cfgname string) {
 	this.connmaxidletime = int(GetConfigInt(fmt.Sprint(cfgname, ".connmaxidletime"), true, 0))
 	this.connmaxidle = int(GetConfigInt(fmt.Sprint(cfgname, ".connmaxidle"), true, 0))
 	this.connmaxopen = int(GetConfigInt(fmt.Sprint(cfgname, ".connmaxopen"), true, 0))
-	conurl := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", this.user, this.password, this.host, this.port, this.database)
-	db, err := gorm.Open("mysql", conurl)
+	conurl := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", this.user, this.password, this.host, this.port, this.database)
+	db, err := gorm.Open(mysql.Open(conurl), &gorm.Config{})
 	if err != nil {
 		logs.Error(err)
 		panic(err)
 	}
-	db.DB().SetMaxIdleConns(this.connmaxidle)
-	db.DB().SetMaxOpenConns(this.connmaxopen)
-	db.DB().SetConnMaxIdleTime(time.Second * time.Duration(this.connmaxidletime))
-	db.DB().SetConnMaxLifetime(time.Second * time.Duration(this.connmaxlifetime))
+	this.conn().SetMaxIdleConns(this.connmaxidle)
+	this.conn().SetMaxOpenConns(this.connmaxopen)
+	this.conn().SetConnMaxIdleTime(time.Second * time.Duration(this.connmaxidletime))
+	this.conn().SetConnMaxLifetime(time.Second * time.Duration(this.connmaxlifetime))
 	this.db = db
 	this.logmode = viper.GetBool(fmt.Sprint(cfgname, ".logmode"))
-	db.LogMode(this.logmode)
-	logs.Debug("连接数据库成功:", this.host, this.port, this.database)
+	if this.logmode {
+		this.db = this.db.Debug()
+	}
+	logs.Debug("connected to database successfully:", this.host, this.port, this.database)
 }
 
 func (this *XDb) conn() *sql.DB {
-	return this.db.DB()
+	sqlDB, err := this.db.DB()
+	if err != nil {
+		logs.Error("failed to get database connection:", err)
+		return nil
+	}
+	return sqlDB
 }
 
 func (this *XDb) Gorm() *gorm.DB {
@@ -86,7 +93,7 @@ func (this *XDb) Database() string {
 
 // 开始事务
 func (this *XDb) Transaction(fc func(*XTx) error) {
-	tx, err := this.db.DB().Begin()
+	tx, err := this.conn().Begin()
 	if err != nil {
 		logs.Error("transaction error:", err)
 		return
@@ -117,7 +124,7 @@ func (this *XDb) CallProcedure(procname string, args ...interface{}) (*XMap, err
 	}
 	sql = fmt.Sprintf("call %s(%s)", procname, sql)
 
-	dbresult, err := this.db.DB().Query(sql, args...)
+	dbresult, err := this.conn().Query(sql, args...)
 	if err != nil {
 		logs.Error(sql, args, err)
 		return nil, err
@@ -181,7 +188,7 @@ func (this *XDb) GetResult(rows *sql.Rows) *XMaps {
 
 // 执行sql,无结果集返回 eg: Exec("update x_user set LoginIp = ?","127.0.0.1")
 func (this *XDb) Exec(query string, args ...any) (sql.Result, error) {
-	data, err := this.db.DB().Exec(query, args...)
+	data, err := this.conn().Exec(query, args...)
 	if err != nil {
 		logs.Error(query, args, err)
 		return nil, err
@@ -191,7 +198,7 @@ func (this *XDb) Exec(query string, args ...any) (sql.Result, error) {
 
 // 执行查询 Query("select * from x_user where UserId = ?",12345)
 func (this *XDb) Query(query string, args ...any) (*XMaps, error) {
-	data, err := this.db.DB().Query(query, args...)
+	data, err := this.conn().Query(query, args...)
 	if err != nil {
 		logs.Error(query, args, err)
 		return nil, err
@@ -264,7 +271,7 @@ func (this *XDb) Union(tables ...interface{}) (*XMaps, error) {
 			data = append(data, d[j])
 		}
 	}
-	rows, err := this.db.DB().Query(sql, data...)
+	rows, err := this.conn().Query(sql, data...)
 	if err != nil {
 		logs.Error(err, "|", sql, data)
 		return nil, err
