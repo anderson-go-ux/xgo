@@ -160,6 +160,30 @@ func (this *XDb) CallProcedure(procname string, args ...interface{}) (*XMap, err
 					} else {
 						data[fields[i]] = scans[i]
 					}
+				} else if typename == "DATETIME" || typename == "DATE" {
+					var timestr string
+					switch v := scans[i].(type) {
+					case []uint8:
+						timestr = string(v)
+					case time.Time:
+						timestr = v.Format("2006-01-02 15:04:05")
+					default:
+						logs.Error("unexpected type for DATETIME/DATE:", reflect.TypeOf(scans[i]))
+						data[fields[i]] = nil
+						continue
+					}
+
+					if typename == "DATE" {
+						timestr += " 00:00:00"
+					}
+
+					t, err := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
+					if err != nil {
+						logs.Error("failed to parse time:", err)
+						data[fields[i]] = nil
+					} else {
+						data[fields[i]] = t.UTC().Format("2006-01-02T15:04:05Z")
+					}
 				} else {
 					data[fields[i]] = string(scans[i].([]uint8))
 				}
@@ -238,17 +262,30 @@ func (this *XDb) getone(rows *sql.Rows) *map[string]any {
 				} else {
 					data[fields[i]] = scans[i]
 				}
-			} else if typename == "DATETIME" {
-				timestr := string(scans[i].([]uint8))
-				t, _ := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
-				r := t.UTC().Format("2006-01-02T15:04:05Z")
-				data[fields[i]] = r
-			} else if typename == "DATE" {
-				timestr := string(scans[i].([]uint8))
-				timestr += " 00:00:00"
-				t, _ := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
-				r := t.UTC().Format("2006-01-02T15:04:05Z")
-				data[fields[i]] = r
+			} else if typename == "DATETIME" || typename == "DATE" {
+				var timestr string
+				switch v := scans[i].(type) {
+				case []uint8:
+					timestr = string(v)
+				case time.Time:
+					timestr = v.Format("2006-01-02 15:04:05")
+				default:
+					logs.Error("unexpected type for DATETIME/DATE:", reflect.TypeOf(scans[i]))
+					data[fields[i]] = nil
+					continue
+				}
+
+				if typename == "DATE" {
+					timestr += " 00:00:00"
+				}
+
+				t, err := time.ParseInLocation("2006-01-02 15:04:05", timestr, time.Local)
+				if err != nil {
+					logs.Error("failed to parse time:", err)
+					data[fields[i]] = nil
+				} else {
+					data[fields[i]] = t.UTC().Format("2006-01-02T15:04:05Z")
+				}
 			} else {
 				data[fields[i]] = string(scans[i].([]uint8))
 			}
